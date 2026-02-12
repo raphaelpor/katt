@@ -1,0 +1,46 @@
+{
+  "name": "katt",
+  "version": "0.0.2",
+  "description": "CLI tool that tests the output of agentic AI tools",
+  "keywords": [
+    "cli",
+    "ai",
+    "agentic-ai",
+    "testing",
+    "evaluation"
+  ],
+  "author": "Raphael Porto (https://github.com/raphaelpor)",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "katt": "dist/index.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "tsx src/index.ts",
+    "lint": "biome lint ./src",
+    "format": "biome format --write ./src",
+    "test": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:build": "node ./dist/index.js"
+  },
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "25.2.0",
+    "tsx": "4.21.0",
+    "typescript": "5.8.2",
+    "vite": "7.3.1",
+    "vite-plugin-dts": "4.5.4",
+    "vitest": "3.2.4",
+    "vscode-jsonrpc": "^8.2.1"
+  },
+  "dependencies": {
+    "@github/copilot-sdk": "^0.1.21"
+  },
+  "bugs": {
+    "url": "https://github.com/raphaelpor/katt/issues"
+  },
+  "homepage": "https://github.com/raphaelpor/katt"
+}

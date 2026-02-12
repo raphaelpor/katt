@@ -1,0 +1,28 @@
+# Source and development artifacts
+src/
+specs/
+examples/
+docs/
+node_modules/
+
+# CI and repository metadata
+.github/
+AGENTS.md
+CONTRIBUTING.md
+
+# Local/project config not needed at runtime
+biome.json
+tsconfig.json
+vite.config.ts
+vitest.config.ts
+katt.json
+
+# Logs and local env files
+*.log
+.env*
+
+# TypeScript/Vitest files outside build output
+*.ts
+*.tsx
+*.mts
+*.cts

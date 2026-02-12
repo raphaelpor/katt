@@ -1,0 +1,106 @@
+name: Bug Report
+description: Report a bug or issue with Katt
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Create an eval file with...
+        2. Run 'npx katt'
+        3. See error...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe the actual behavior...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: eval-file
+    attributes:
+      label: Eval File Example
+      description: If applicable, provide a minimal eval file that reproduces the issue
+      placeholder: |
+        ```typescript
+        describe("Example", () => {
+          it("should work", async () => {
+            const result = await prompt("test");
+            expect(result).toContain("expected");
+          });
+        });
+        ```
+      render: typescript
+  
+  - type: input
+    id: version
+    attributes:
+      label: Katt Version
+      description: What version of Katt are you using?
+      placeholder: e.g., 0.1.0
+    validations:
+      required: true
+  
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you using?
+      placeholder: e.g., v20.11.0
+    validations:
+      required: true
+  
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      placeholder: e.g., macOS 14.2, Ubuntu 22.04, Windows 11
+    validations:
+      required: true
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: If applicable, paste any relevant error messages or logs
+      placeholder: Paste error logs here...
+      render: shell
+  
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: Any additional information...

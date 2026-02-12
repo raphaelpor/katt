@@ -1,0 +1,211 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  mockFindEvalFiles,
+  mockClearFailedTests,
+  mockClearTotalTests,
+  mockGetFailedTests,
+  mockGetTotalTests,
+  mockSettlePendingTests,
+  mockEvalFileRun,
+  mockResetTestLoggingState,
+  mockCyanBold,
+  mockDisplayBanner,
+  mockSetSnapshotUpdateMode,
+} = vi.hoisted(() => ({
+  mockFindEvalFiles: vi.fn(),
+  mockClearFailedTests: vi.fn(),
+  mockClearTotalTests: vi.fn(),
+  mockGetFailedTests: vi.fn(),
+  mockGetTotalTests: vi.fn(),
+  mockSettlePendingTests: vi.fn(),
+  mockEvalFileRun: vi.fn(),
+  mockResetTestLoggingState: vi.fn(),
+  mockCyanBold: vi.fn((value: string) => `[${value}]`),
+  mockDisplayBanner: vi.fn(),
+  mockSetSnapshotUpdateMode: vi.fn(),
+}));
+
+vi.mock("./findEvalFiles.js", () => ({
+  findEvalFiles: mockFindEvalFiles,
+}));
+
+vi.mock("../lib/context/context.js", () => ({
+  clearFailedTests: mockClearFailedTests,
+  clearTotalTests: mockClearTotalTests,
+  getFailedTests: mockGetFailedTests,
+  getTotalTests: mockGetTotalTests,
+  settlePendingTests: mockSettlePendingTests,
+}));
+
+vi.mock("../lib/context/evalFileContext.js", () => ({
+  evalFileStorage: {
+    run: mockEvalFileRun,
+  },
+}));
+
+vi.mock("../lib/it/it.js", () => ({
+  resetTestLoggingState: mockResetTestLoggingState,
+}));
+
+vi.mock("../lib/output/color.js", () => ({
+  cyanBold: mockCyanBold,
+}));
+
+vi.mock("../lib/expect/snapshotConfig.js", () => ({
+  setSnapshotUpdateMode: mockSetSnapshotUpdateMode,
+}));
+
+vi.mock("./banner.js", () => ({
+  displayBanner: mockDisplayBanner,
+}));
+
+import { runCli } from "./runCli.js";
+
+describe("runCli", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T05:06:07.000Z"));
+
+    mockFindEvalFiles.mockReset();
+    mockClearFailedTests.mockReset();
+    mockClearTotalTests.mockReset();
+    mockGetFailedTests.mockReset();
+    mockGetTotalTests.mockReset();
+    mockSettlePendingTests.mockReset();
+    mockEvalFileRun.mockReset();
+    mockResetTestLoggingState.mockReset();
+    mockCyanBold.mockClear();
+    mockDisplayBanner.mockReset();
+    mockSetSnapshotUpdateMode.mockReset();
+
+    mockGetFailedTests.mockReturnValue([]);
+    mockGetTotalTests.mockReturnValue(0);
+    mockSettlePendingTests.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("returns 1 when no eval files are found", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue([]);
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(1);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockResetTestLoggingState).toHaveBeenCalledTimes(1);
+    expect(mockClearFailedTests).toHaveBeenCalledTimes(1);
+    expect(mockClearTotalTests).toHaveBeenCalledTimes(1);
+    expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(false);
+    expect(logSpy).toHaveBeenCalledWith("No .eval.js or .eval.ts files found.");
+  });
+
+  it("enables snapshot update mode when -u is passed", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+
+    const originalArgv = process.argv;
+    let exitCode = 1;
+    try {
+      process.argv = ["node", "katt", "-u"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(true);
+    expect(logSpy).toHaveBeenCalled();
+  });
+
+  it("returns 1 when an eval file execution fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockRejectedValue(new Error("boom"));
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(1);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Error executing /tmp/a.eval.ts: Error: boom"),
+    );
+  });
+
+  it("returns 1 when pending async tests fail", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+    mockSettlePendingTests.mockResolvedValue([
+      {
+        status: "rejected",
+        reason: new Error("async boom"),
+      },
+    ]);
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(1);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Error executing async test: Error: async boom"),
+    );
+  });
+
+  it("returns 1 and prints failed test details when failures are registered", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+    mockGetFailedTests.mockReturnValue([
+      {
+        describePath: "suite > nested",
+        itPath: "case",
+        message: "expected x to include y",
+      },
+    ]);
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(1);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith("❌ Failed tests:");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "1. suite > nested > case: expected x to include y",
+    );
+  });
+
+  it("returns 0 and logs summary on success", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts", "/tmp/b.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+    mockGetTotalTests.mockReturnValue(3);
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(0);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockEvalFileRun).toHaveBeenCalledTimes(2);
+    expect(mockEvalFileRun).toHaveBeenNthCalledWith(
+      1,
+      { evalFile: "/tmp/a.eval.ts" },
+      expect.any(Function),
+    );
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const summary = logSpy.mock.calls[0]?.[0] ?? "";
+    expect(summary).toContain("[Files]  2 passed");
+    expect(summary).toContain("[Evals]  3 passed");
+    expect(summary).toMatch(/\[Start at\]\s+\d{2}:\d{2}:\d{2}/);
+    expect(summary).toContain("[Duration]");
+  });
+});
