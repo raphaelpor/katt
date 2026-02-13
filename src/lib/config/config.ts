@@ -4,6 +4,12 @@ import type { SessionConfig } from "@github/copilot-sdk";
 
 type KattConfig = {
   copilot?: unknown;
+  prompt?: unknown;
+};
+
+export type KattDefaults = {
+  copilot?: SessionConfig;
+  promptTimeoutMs?: number;
 };
 
 function isNodeErrorWithCode(
@@ -27,6 +33,22 @@ function parseKattConfig(content: string): KattConfig | undefined {
     return undefined;
   } catch (error) {
     console.warn(`Failed to parse katt.json: ${String(error)}`);
+    return undefined;
+  }
+}
+
+async function readKattConfig(): Promise<KattConfig | undefined> {
+  const configPath = resolve(process.cwd(), "katt.json");
+
+  try {
+    const content = await readFile(configPath, "utf8");
+    return parseKattConfig(content);
+  } catch (error) {
+    if (isNodeErrorWithCode(error, "ENOENT")) {
+      return undefined;
+    }
+
+    console.warn(`Failed to read katt.json: ${String(error)}`);
     return undefined;
   }
 }
@@ -55,22 +77,45 @@ function readCopilotConfig(
   return Object.keys(sessionConfig).length > 0 ? sessionConfig : undefined;
 }
 
+function normalizeTimeoutMs(timeoutMs: unknown): number | undefined {
+  if (typeof timeoutMs !== "number" || !Number.isFinite(timeoutMs)) {
+    return undefined;
+  }
+  if (timeoutMs <= 0) {
+    return undefined;
+  }
+  return Math.floor(timeoutMs);
+}
+
+function readPromptTimeoutMs(
+  config: KattConfig | undefined,
+): number | undefined {
+  const prompt = config?.prompt;
+  if (typeof prompt !== "object" || prompt === null || Array.isArray(prompt)) {
+    return undefined;
+  }
+
+  return normalizeTimeoutMs((prompt as Record<string, unknown>).timeoutMs);
+}
+
+export async function getDefaultKattConfig(): Promise<KattDefaults> {
+  const config = await readKattConfig();
+  return {
+    copilot: readCopilotConfig(config),
+    promptTimeoutMs: readPromptTimeoutMs(config),
+  };
+}
+
 export async function getDefaultCopilotConfig(): Promise<
   SessionConfig | undefined
 > {
-  const configPath = resolve(process.cwd(), "katt.json");
+  const config = await getDefaultKattConfig();
+  return config.copilot;
+}
 
-  try {
-    const content = await readFile(configPath, "utf8");
-    return readCopilotConfig(parseKattConfig(content));
-  } catch (error) {
-    if (isNodeErrorWithCode(error, "ENOENT")) {
-      return undefined;
-    }
-
-    console.warn(`Failed to read katt.json: ${String(error)}`);
-    return undefined;
-  }
+export async function getDefaultPromptTimeoutMs(): Promise<number | undefined> {
+  const config = await getDefaultKattConfig();
+  return config.promptTimeoutMs;
 }
 
 export async function getDefaultCopilotModel(): Promise<string | undefined> {

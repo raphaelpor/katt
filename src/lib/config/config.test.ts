@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getDefaultCopilotConfig, getDefaultCopilotModel } from "./config.js";
+import {
+  getDefaultCopilotConfig,
+  getDefaultCopilotModel,
+  getDefaultKattConfig,
+  getDefaultPromptTimeoutMs,
+} from "./config.js";
 
 const readFileMock = vi.fn();
 
@@ -116,5 +121,76 @@ describe("getDefaultCopilotConfig", () => {
     const result = await getDefaultCopilotConfig();
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getDefaultPromptTimeoutMs", () => {
+  afterEach(() => {
+    readFileMock.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  it("returns undefined when katt.json does not exist", async () => {
+    const missingFileError = Object.assign(new Error("missing"), {
+      code: "ENOENT",
+    });
+    readFileMock.mockRejectedValue(missingFileError);
+
+    const result = await getDefaultPromptTimeoutMs();
+
+    expect(result).toBeUndefined();
+  });
+
+  it("returns timeout from katt.json when configured", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({ prompt: { timeoutMs: 240000 } }),
+    );
+
+    const result = await getDefaultPromptTimeoutMs();
+
+    expect(result).toBe(240000);
+  });
+
+  it("normalizes timeout to a positive integer", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({ prompt: { timeoutMs: 240000.9 } }),
+    );
+
+    const result = await getDefaultPromptTimeoutMs();
+
+    expect(result).toBe(240000);
+  });
+
+  it("returns undefined for invalid timeout values", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({ prompt: { timeoutMs: "120000" } }),
+    );
+
+    const result = await getDefaultPromptTimeoutMs();
+
+    expect(result).toBeUndefined();
+  });
+});
+
+describe("getDefaultKattConfig", () => {
+  afterEach(() => {
+    readFileMock.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  it("returns both copilot and prompt defaults when configured", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        copilot: { model: "gpt-5.2", streaming: true },
+        prompt: { timeoutMs: 300000 },
+      }),
+    );
+
+    const result = await getDefaultKattConfig();
+
+    expect(result).toEqual({
+      copilot: { model: "gpt-5.2", streaming: true },
+      promptTimeoutMs: 300000,
+    });
   });
 });

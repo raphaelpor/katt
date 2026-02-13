@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { join } from "node:path";
 import { evalFileStorage } from "../context/evalFileContext.js";
-import { prompt, promptFile } from "./prompt.js";
+import { DEFAULT_PROMPT_TIMEOUT_MS, prompt, promptFile } from "./prompt.js";
 
 const readFileMock = vi.fn();
 const addUsedTokensToCurrentTestMock = vi.fn();
 const setCurrentTestModelMock = vi.fn();
-const getDefaultCopilotConfigMock = vi.fn();
+const getDefaultKattConfigMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFileMock(...args),
@@ -19,8 +19,8 @@ vi.mock("../context/context.js", () => ({
 }));
 
 vi.mock("../config/config.js", () => ({
-  getDefaultCopilotConfig: (...args: unknown[]) =>
-    getDefaultCopilotConfigMock(...args),
+  getDefaultKattConfig: (...args: unknown[]) =>
+    getDefaultKattConfigMock(...args),
 }));
 
 let sendAndWaitMock: ReturnType<typeof vi.fn>;
@@ -43,7 +43,10 @@ function setupSessionMocks(
   stopErrors: Error[] = [],
   destroyError?: Error,
 ) {
-  getDefaultCopilotConfigMock.mockResolvedValue(undefined);
+  getDefaultKattConfigMock.mockResolvedValue({
+    copilot: undefined,
+    promptTimeoutMs: undefined,
+  });
   sendAndWaitMock = vi.fn().mockResolvedValue({ data: { content: "ok" } });
   destroyMock = destroyError
     ? vi.fn().mockRejectedValue(destroyError)
@@ -88,7 +91,7 @@ describe("prompt", () => {
     readFileMock.mockReset();
     addUsedTokensToCurrentTestMock.mockReset();
     setCurrentTestModelMock.mockReset();
-    getDefaultCopilotConfigMock.mockReset();
+    getDefaultKattConfigMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -99,7 +102,10 @@ describe("prompt", () => {
 
     expect(result).toBe("ok");
     expect(startMock).toHaveBeenCalledTimes(1);
-    expect(sendAndWaitMock).toHaveBeenCalledWith({ prompt: "Hello" });
+    expect(sendAndWaitMock).toHaveBeenCalledWith(
+      { prompt: "Hello" },
+      DEFAULT_PROMPT_TIMEOUT_MS,
+    );
     expect(createSessionMock).toHaveBeenCalledTimes(1);
     expect(destroyMock).toHaveBeenCalledTimes(1);
     expect(stopMock).toHaveBeenCalledTimes(1);
@@ -108,7 +114,10 @@ describe("prompt", () => {
 
   it("passes the model to Copilot session creation when provided", async () => {
     setupSessionMocks();
-    getDefaultCopilotConfigMock.mockResolvedValue({ model: "gpt-4o" });
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: { model: "gpt-4o" },
+      promptTimeoutMs: undefined,
+    });
 
     await prompt("Hello", { model: "gpt-5.2" });
 
@@ -117,7 +126,10 @@ describe("prompt", () => {
 
   it("uses model from katt.json when no explicit model is provided", async () => {
     setupSessionMocks();
-    getDefaultCopilotConfigMock.mockResolvedValue({ model: "gpt-4o" });
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: { model: "gpt-4o" },
+      promptTimeoutMs: undefined,
+    });
 
     await prompt("Hello");
 
@@ -126,10 +138,13 @@ describe("prompt", () => {
 
   it("passes non-model copilot config options from katt.json to session creation", async () => {
     setupSessionMocks();
-    getDefaultCopilotConfigMock.mockResolvedValue({
-      model: "gpt-4o",
-      reasoningEffort: "high",
-      streaming: true,
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: {
+        model: "gpt-4o",
+        reasoningEffort: "high",
+        streaming: true,
+      },
+      promptTimeoutMs: undefined,
     });
 
     await prompt("Hello");
@@ -143,9 +158,12 @@ describe("prompt", () => {
 
   it("allows explicit options to override katt.json session options", async () => {
     setupSessionMocks();
-    getDefaultCopilotConfigMock.mockResolvedValue({
-      model: "gpt-4o",
-      streaming: false,
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: {
+        model: "gpt-4o",
+        streaming: false,
+      },
+      promptTimeoutMs: undefined,
     });
 
     await prompt("Hello", { model: "gpt-5.2", streaming: true });
@@ -166,11 +184,61 @@ describe("prompt", () => {
 
   it("tracks config model usage for the active test", async () => {
     setupSessionMocks();
-    getDefaultCopilotConfigMock.mockResolvedValue({ model: "gpt-4o" });
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: { model: "gpt-4o" },
+      promptTimeoutMs: undefined,
+    });
 
     await prompt("Hello");
 
     expect(setCurrentTestModelMock).toHaveBeenCalledWith("gpt-4o");
+  });
+
+  it("uses prompt timeout from katt.json when no explicit timeout is provided", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: undefined,
+      promptTimeoutMs: 240000,
+    });
+
+    await prompt("Hello");
+
+    expect(sendAndWaitMock).toHaveBeenCalledWith({ prompt: "Hello" }, 240000);
+  });
+
+  it("lets explicit timeout override katt.json prompt timeout", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: undefined,
+      promptTimeoutMs: 240000,
+    });
+
+    await prompt("Hello", { timeoutMs: 300000 });
+
+    expect(sendAndWaitMock).toHaveBeenCalledWith({ prompt: "Hello" }, 300000);
+  });
+
+  it("ignores invalid timeout values and falls back to the default timeout", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      copilot: undefined,
+      promptTimeoutMs: -1,
+    });
+
+    await prompt("Hello", { timeoutMs: 0 });
+
+    expect(sendAndWaitMock).toHaveBeenCalledWith(
+      { prompt: "Hello" },
+      DEFAULT_PROMPT_TIMEOUT_MS,
+    );
+  });
+
+  it("does not pass timeoutMs to session creation options", async () => {
+    setupSessionMocks();
+
+    await prompt("Hello", { model: "gpt-5.2", timeoutMs: 300000 });
+
+    expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-5.2" });
   });
 
   it("tracks assistant usage as test token usage", async () => {
@@ -205,7 +273,7 @@ describe("promptFile", () => {
     readFileMock.mockReset();
     addUsedTokensToCurrentTestMock.mockReset();
     setCurrentTestModelMock.mockReset();
-    getDefaultCopilotConfigMock.mockReset();
+    getDefaultKattConfigMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -217,9 +285,12 @@ describe("promptFile", () => {
 
     expect(result).toBe("ok");
     expect(readFileMock).toHaveBeenCalledWith("/tmp/prompt.md", "utf8");
-    expect(sendAndWaitMock).toHaveBeenCalledWith({
-      prompt: "Hello from file",
-    });
+    expect(sendAndWaitMock).toHaveBeenCalledWith(
+      {
+        prompt: "Hello from file",
+      },
+      DEFAULT_PROMPT_TIMEOUT_MS,
+    );
   });
 
   it("passes the model option through to prompt", async () => {

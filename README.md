@@ -37,6 +37,7 @@ describe("Greeting agent", () => {
 - **Classification Matcher**: Built-in `toBeClassifiedAs()` matcher to grade a response against a target label on a 1-5 scale
 - **Concurrent Execution**: Runs eval files concurrently for faster test execution
 - **Model Selection**: Support for specifying custom AI models
+- **Configurable Timeouts**: Override prompt wait time per test or via `katt.json`
 
 ## Usage
 
@@ -89,6 +90,9 @@ You can also set a default model for the project by adding a `katt.json` file in
 {
   "copilot": {
     "model": "gpt-5-mini"
+  },
+  "prompt": {
+    "timeoutMs": 240000
   }
 }
 ```
@@ -97,6 +101,7 @@ When this file exists:
 
 - `prompt("...")` and `promptFile("...")` use `copilot.model` by default
 - `prompt("...", { model: "..." })` still overrides the config value
+- `prompt.timeoutMs` sets the default wait timeout for long-running prompts
 
 ## Development
 

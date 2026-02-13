@@ -16,7 +16,8 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 - Input:
   - `input: string`
-  - `options?: SessionConfig` (Copilot session options)
+  - `options?: SessionConfig & { timeoutMs?: number }`
+    - `timeoutMs` controls how long to wait for `session.idle`.
 - Output:
   - `Promise<string>` containing the assistant response content.
 
@@ -24,7 +25,7 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 - Input:
   - `filePath: string`
-  - `options?: SessionConfig` (Copilot session options)
+  - `options?: SessionConfig & { timeoutMs?: number }`
 - Output:
   - `Promise<string>` containing the assistant response content after sending
     file contents as the prompt.
@@ -40,9 +41,13 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
      - `katt.json` `copilot` config (base)
      - explicit `options` (override)
    - With default session options when merged options are empty.
-4. Sends `{ prompt: input }` and waits for completion.
-5. Returns `response.data.content` as a string.
-6. If the response has no content, throws:
+4. Resolves prompt timeout:
+   - `options.timeoutMs` (if valid positive number) has highest precedence.
+   - `katt.json` `prompt.timeoutMs` (if valid positive number) is fallback.
+   - Default timeout is `600000` milliseconds.
+5. Sends `{ prompt: input }` and waits for completion using the resolved timeout.
+6. Returns `response.data.content` as a string.
+7. If the response has no content, throws:
    - `Error("Copilot did not return a response.")`
 
 ### Cleanup guarantees for `prompt()`
