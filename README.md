@@ -41,6 +41,12 @@ describe("Greeting agent", () => {
 
 ## Usage
 
+### Installation
+
+```bash
+npm install -g katt
+```
+
 ### Basic Usage
 
 1. Create a file with the `.eval.ts` or `.eval.js` extension and write your tests.
@@ -52,7 +58,7 @@ expect(result).toContain("hello world");
 2. Run Katt from your project directory:
 
 ```bash
-npx katt
+katt
 ```
 
 ### Using promptFile

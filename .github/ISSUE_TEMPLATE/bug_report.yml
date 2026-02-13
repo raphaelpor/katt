@@ -24,7 +24,7 @@ body:
       description: Steps to reproduce the behavior
       placeholder: |
         1. Create an eval file with...
-        2. Run 'npx katt'
+        2. Run 'katt'
         3. See error...
     validations:
       required: true
