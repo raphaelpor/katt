@@ -7,9 +7,13 @@ import {
   setCurrentTestModel,
 } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
-import { getDefaultCopilotConfig } from "../config/config.js";
+import { getDefaultKattConfig } from "../config/config.js";
 
-export type PromptOptions = SessionConfig;
+export const DEFAULT_PROMPT_TIMEOUT_MS = 600_000;
+
+export type PromptOptions = SessionConfig & {
+  timeoutMs?: number;
+};
 
 function normalizeModel(model: string | undefined): string | undefined {
   return typeof model === "string" && model.length > 0 ? model : undefined;
@@ -33,6 +37,16 @@ function normalizeSessionConfig(
   }
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function normalizeTimeoutMs(timeoutMs: unknown): number | undefined {
+  if (typeof timeoutMs !== "number" || !Number.isFinite(timeoutMs)) {
+    return undefined;
+  }
+  if (timeoutMs <= 0) {
+    return undefined;
+  }
+  return Math.floor(timeoutMs);
 }
 
 function toNonNegativeInteger(value: number | undefined): number {
@@ -60,12 +74,20 @@ export async function prompt(
   input: string,
   options: PromptOptions = {},
 ): Promise<string> {
-  const configOptions = normalizeSessionConfig(await getDefaultCopilotConfig());
-  const explicitOptions = normalizeSessionConfig(options);
+  const { timeoutMs: explicitTimeoutMsRaw, ...explicitSessionConfig } = options;
+  const defaults = await getDefaultKattConfig();
+  const configOptions = normalizeSessionConfig(defaults.copilot);
+  const explicitOptions = normalizeSessionConfig(
+    explicitSessionConfig as SessionConfig,
+  );
   const sessionOptions = normalizeSessionConfig({
     ...(configOptions ?? {}),
     ...(explicitOptions ?? {}),
   });
+  const configuredTimeoutMs = normalizeTimeoutMs(defaults.promptTimeoutMs);
+  const explicitTimeoutMs = normalizeTimeoutMs(explicitTimeoutMsRaw);
+  const timeoutMs =
+    explicitTimeoutMs ?? configuredTimeoutMs ?? DEFAULT_PROMPT_TIMEOUT_MS;
 
   const model = normalizeModel(sessionOptions?.model);
   const client = new CopilotClient({ useLoggedInUser: true });
@@ -79,7 +101,7 @@ export async function prompt(
     unsubscribeUsage = session.on("assistant.usage", (event) => {
       usedTokens += getUsageTokens(event.data);
     });
-    const response = await session.sendAndWait({ prompt: input });
+    const response = await session.sendAndWait({ prompt: input }, timeoutMs);
 
     if (!response?.data?.content) {
       throw new Error("Copilot did not return a response.");

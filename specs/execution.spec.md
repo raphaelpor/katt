@@ -70,8 +70,8 @@ Eval files do not need to import test APIs. The following are available on `glob
 - `describe(description, fn)`
 - `it(description, fn)`
 - `expect(value)`
-- `prompt(input, { model? })`
-- `promptFile(filePath, { model? })`
+- `prompt(input, { model?, timeoutMs? })`
+- `promptFile(filePath, { model?, timeoutMs? })`
 
 ## Example Eval File
 
@@ -119,6 +119,19 @@ describe("Greeting agent", () => {
   it("should say hello", async () => {
     const result = await promptFile("./myPrompt.md", { model: "gpt-5.2" });
     expect(result).toContain("Hi");
+  });
+});
+```
+
+`prompt()` and `promptFile()` also support timeout overrides for long-running tasks:
+
+```js
+describe("Long running task", () => {
+  it("waits longer for completion", async () => {
+    const result = await prompt("Do a deep analysis", {
+      timeoutMs: 300000,
+    });
+    expect(result).toContain("analysis");
   });
 });
 ```

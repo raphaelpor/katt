@@ -12,6 +12,7 @@ This document lists the currently available Katt features and how to use them.
 - Prompt execution with optional Copilot session option overrides
 - Prompt loading from files with relative-path resolution
 - Default Copilot session configuration via `katt.json`
+- Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
 - Test summary, token usage tracking, and non-zero exit on failure
@@ -121,7 +122,13 @@ Sends `input` to the AI model and returns the response string.
 `options`:
 - Any Copilot session option (for example: `model`, `reasoningEffort`,
   `streaming`)
+- `timeoutMs?: number` to control how long to wait for `session.idle`
 - Explicit options override matching keys from `katt.json`
+
+Timeout precedence:
+- `options.timeoutMs` (when valid and positive)
+- `katt.json` `prompt.timeoutMs` (when valid and positive)
+- Built-in default: `600000` ms
 
 ```ts
 const result = await prompt("Return exactly: PASS", { model: "gpt-5-mini" });
@@ -154,6 +161,9 @@ Set default Copilot session options:
     "model": "gpt-5-mini",
     "reasoningEffort": "high",
     "streaming": true
+  },
+  "prompt": {
+    "timeoutMs": 240000
   }
 }
 ```
@@ -162,6 +172,7 @@ Behavior:
 - `prompt("...")` and `promptFile("...")` use `copilot` values as default
   session options
 - Passing `options` to `prompt`/`promptFile` overrides matching keys from config
+- `prompt.timeoutMs` sets the default wait timeout for prompt completion
 
 ## CLI Behavior
 
