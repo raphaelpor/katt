@@ -2,6 +2,27 @@
 
 This document lists the currently available Katt features and how to use them.
 
+## Table of Contents
+
+- [Feature Overview](#feature-overview)
+- [Global APIs](#global-apis)
+- [`describe(description, fn)`](#describedescription-fn)
+- [`it(description, fn)`](#itdescription-fn)
+- [`expect(value)`](#expectvalue)
+- [Matchers](#matchers)
+- [`.toContain(substring)`](#tocontainsubstring)
+- [`.toMatchSnapshot()`](#tomatchsnapshot)
+- [`.promptCheck(instructions)`](#promptcheckinstructions)
+- [`.toBeClassifiedAs(classification, options?)`](#tobeclassifiedasclassification-options)
+- [Prompt APIs](#prompt-apis)
+- [`prompt(input, options?)`](#promptinput-options)
+- [`promptFile(filePath, options?)`](#promptfilefilepath-options)
+- [Configuration](#configuration)
+- [`katt.json`](#kattjson)
+- [CLI Behavior](#cli-behavior)
+- [Eval file discovery](#eval-file-discovery)
+- [Execution and results](#execution-and-results)
+
 ## Feature Overview
 
 - Global test APIs available in eval files (`describe`, `it`, `expect`, `prompt`, `promptFile`)
