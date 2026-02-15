@@ -1,3 +1,5 @@
+import { describe, expect, it, prompt } from "katt";
+
 describe('Hello World', () => {
     it('It should say hi', async () => {
         const result = await prompt('If you read this just say hi');
