@@ -1,4 +1,5 @@
 # Katt
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/raphaelpor/katt/blob/main/LICENSE) [![npm version](https://img.shields.io/npm/v/katt.svg?style=flat)](https://www.npmjs.com/package/katt)
 
 Katt is a lightweight testing framework for running AI Evals, inspired by [Jest](https://github.com/jestjs/jest).
 
