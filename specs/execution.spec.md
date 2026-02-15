@@ -63,20 +63,20 @@ katt
 
 Note: there is currently no success log line on passing runs.
 
-## Globals Available In Eval Files
+## Imports Required In Eval Files
 
-Eval files do not need to import test APIs. The following are available on `globalThis`:
+Eval files must import test APIs from `katt`:
 
-- `describe(description, fn)`
-- `it(description, fn)`
-- `expect(value)`
-- `prompt(input, { model?, timeoutMs? })`
-- `promptFile(filePath, { model?, timeoutMs? })`
+```js
+import { describe, expect, it, prompt, promptFile } from "katt";
+```
 
 ## Example Eval File
 
 ```js
 // example.eval.js
+import { describe, expect, it, prompt } from "katt";
+
 describe("Greeting agent", () => {
   it("should say hello", async () => {
     const result = await prompt("If you read this, say hello.");
@@ -89,6 +89,8 @@ describe("Greeting agent", () => {
 
 ```js
 // example.eval.js
+import { describe, expect, it, prompt } from "katt";
+
 describe("Greeting agent", () => {
   it("should say hello", async () => {
     const result = await prompt("If you read this, say hello.", {
@@ -103,6 +105,8 @@ describe("Greeting agent", () => {
 
 ```js
 // example.eval.js
+import { describe, expect, it, promptFile } from "katt";
+
 describe("Greeting agent", () => {
   it("should say hello", async () => {
     const result = await promptFile("./myPrompt.md");
@@ -115,6 +119,8 @@ describe("Greeting agent", () => {
 
 ```js
 // example.eval.js
+import { describe, expect, it, promptFile } from "katt";
+
 describe("Greeting agent", () => {
   it("should say hello", async () => {
     const result = await promptFile("./myPrompt.md", { model: "gpt-5.2" });
@@ -126,6 +132,8 @@ describe("Greeting agent", () => {
 `prompt()` and `promptFile()` also support timeout overrides for long-running tasks:
 
 ```js
+import { describe, expect, it, prompt } from "katt";
+
 describe("Long running task", () => {
   it("waits longer for completion", async () => {
     const result = await prompt("Do a deep analysis", {

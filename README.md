@@ -37,6 +37,8 @@ For a complete list of features and usage examples, see [docs/api-documentation.
 ## Hello World - Example
 
 ```typescript
+import { expect, prompt } from "katt";
+
 const result = await prompt("If you read this just say 'hello world'");
 expect(result).toContain("hello world");
 ```
@@ -44,6 +46,8 @@ expect(result).toContain("hello world");
 It also supports the familiar `describe` and `it` syntax for organizing tests:
 
 ```typescript
+import { describe, expect, it, prompt } from "katt";
+
 describe("Greeting agent", () => {
   it("should say hello world", async () => {
     const result = await prompt("If you read this just say 'hello world'");
@@ -73,6 +77,8 @@ npm install -g katt
 
 1. Create a file with the `.eval.ts` or `.eval.js` extension and write your tests.
 ```typescript
+import { expect, prompt } from "katt";
+
 const result = await prompt("If you read this just say 'hello world'");
 expect(result).toContain("hello world");
 ```
@@ -89,6 +95,8 @@ Load prompts from external files:
 
 ```javascript
 // test.eval.js
+import { describe, expect, it, promptFile } from "katt";
+
 describe("Working with files", () => {
   it("should load the file and respond", async () => {
     const result = await promptFile("./myPrompt.md");
@@ -102,6 +110,8 @@ describe("Working with files", () => {
 You can specify a custom model for your prompts:
 
 ```javascript
+import { describe, expect, it, prompt } from "katt";
+
 describe("Model selection", () => {
   it("should use a specific model", async () => {
     const promptString = "You are a helpful agent. Say hi and ask what you could help the user with.";

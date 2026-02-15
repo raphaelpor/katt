@@ -13,8 +13,14 @@
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
-    "katt": "dist/index.js"
+    "katt": "dist/katt.js"
   },
   "scripts": {
     "build": "vite build",
@@ -23,7 +29,7 @@
     "format": "biome format --write ./src",
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:build": "node ./dist/index.js"
+    "test:build": "node ./dist/katt.js"
   },
   "types": "dist/index.d.ts",
   "devDependencies": {

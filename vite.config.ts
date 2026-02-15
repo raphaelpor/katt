@@ -4,9 +4,12 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        katt: 'src/cli.ts',
+      },
       formats: ['es'],
-      fileName: 'index',
+      fileName: (_format, entryName) => `${entryName}.js`,
     },
     outDir: 'dist',
     emptyOutDir: true,
@@ -20,7 +23,7 @@ export default defineConfig({
         /^zod$/,
       ],
       output: {
-        banner: '#!/usr/bin/env node',
+        banner: (chunk) => (chunk.fileName === 'katt.js' ? '#!/usr/bin/env node' : ''),
       },
     },
   },

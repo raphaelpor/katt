@@ -5,7 +5,7 @@ This document lists the currently available Katt features and how to use them.
 ## Table of Contents
 
 - [Feature Overview](#feature-overview)
-- [Global APIs](#global-apis)
+- [Imports](#imports)
 - [`describe(description, fn)`](#describedescription-fn)
 - [`it(description, fn)`](#itdescription-fn)
 - [`expect(value)`](#expectvalue)
@@ -25,7 +25,7 @@ This document lists the currently available Katt features and how to use them.
 
 ## Feature Overview
 
-- Global test APIs available in eval files (`describe`, `it`, `expect`, `prompt`, `promptFile`)
+- Imported test APIs available in eval files (`describe`, `it`, `expect`, `prompt`, `promptFile`)
 - String matcher: `toContain`
 - Snapshot matcher: `toMatchSnapshot`
 - AI-based matcher: `promptCheck`
@@ -38,9 +38,13 @@ This document lists the currently available Katt features and how to use them.
 - Concurrent eval-file execution
 - Test summary, token usage tracking, and non-zero exit on failure
 
-## Global APIs
+## Imports
 
-Eval files do not need imports for Katt APIs.
+Eval files must import Katt APIs.
+
+```ts
+import { describe, expect, it, prompt, promptFile } from "katt";
+```
 
 ### `describe(description, fn)`
 
