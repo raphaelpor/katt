@@ -4,13 +4,34 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 
 <img src="https://raw.githubusercontent.com/raphaelpor/katt/main/docs/logo.png" alt="Katt logo" width="250" />
 
+## Table of Contents
+
+- [Overview](#overview)
+- [API Documentation](#api-documentation)
+- [Hello World - Example](#hello-world---example)
+- [Main Features](#main-features)
+- [Usage](#usage)
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Using promptFile](#using-promptfile)
+- [Specifying AI Models](#specifying-ai-models)
+- [Development](#development)
+- [Setup](#setup)
+- [Available Scripts](#available-scripts)
+- [Verification Process](#verification-process)
+- [Project Structure](#project-structure)
+- [How It Works](#how-it-works)
+- [Requirements](#requirements)
+- [License](#license)
+- [Contributing](#contributing)
+
 ## Overview
 
 Katt is designed to evaluate and validate the behavior of AI agents like **Claude Code**, **GitHub Copilot**, **OpenAI Codex** and more. It provides a simple, intuitive API for writing tests that interact with AI models and assert their responses.
 
 ## API Documentation
 
-For a complete list of features and usage examples, see [docs/api-documentation.md](docs/api-documentation.md).
+For a complete list of features and usage examples, see [docs/api-documentation.md](https://github.com/raphaelpor/katt/blob/main/docs/api-documentation.md).
 
 ## Hello World - Example
 
@@ -41,6 +62,12 @@ describe("Greeting agent", () => {
 
 ## Usage
 
+### Installation
+
+```bash
+npm install -g katt
+```
+
 ### Basic Usage
 
 1. Create a file with the `.eval.ts` or `.eval.js` extension and write your tests.
@@ -52,7 +79,7 @@ expect(result).toContain("hello world");
 2. Run Katt from your project directory:
 
 ```bash
-npx katt
+katt
 ```
 
 ### Using promptFile
@@ -167,7 +194,7 @@ MIT
 
 ## Contributing
 
-We welcome contributions from the community! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) guide for detailed information on how to contribute to Katt.
+We welcome contributions from the community! Please see our [CONTRIBUTING.md](https://github.com/raphaelpor/katt/blob/main/CONTRIBUTING.md) guide for detailed information on how to contribute to Katt.
 
 Quick start:
 1. Fork the repository
@@ -176,4 +203,4 @@ Quick start:
 4. Run the verification process
 5. Submit a pull request
 
-For detailed guidelines, development setup, coding standards, and more, check out our [contribution guide](CONTRIBUTING.md).
+For detailed guidelines, development setup, coding standards, and more, check out our [contribution guide](https://github.com/raphaelpor/katt/blob/main/CONTRIBUTING.md).
