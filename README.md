@@ -31,7 +31,7 @@ Katt is designed to evaluate and validate the behavior of AI agents like **Claud
 
 ## API Documentation
 
-For a complete list of features and usage examples, see [docs/api-documentation.md](docs/api-documentation.md).
+For a complete list of features and usage examples, see [docs/api-documentation.md](https://github.com/raphaelpor/katt/blob/main/docs/api-documentation.md).
 
 ## Hello World - Example
 
@@ -194,7 +194,7 @@ MIT
 
 ## Contributing
 
-We welcome contributions from the community! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) guide for detailed information on how to contribute to Katt.
+We welcome contributions from the community! Please see our [CONTRIBUTING.md](https://github.com/raphaelpor/katt/blob/main/CONTRIBUTING.md) guide for detailed information on how to contribute to Katt.
 
 Quick start:
 1. Fork the repository
@@ -203,4 +203,4 @@ Quick start:
 4. Run the verification process
 5. Submit a pull request
 
-For detailed guidelines, development setup, coding standards, and more, check out our [contribution guide](CONTRIBUTING.md).
+For detailed guidelines, development setup, coding standards, and more, check out our [contribution guide](https://github.com/raphaelpor/katt/blob/main/CONTRIBUTING.md).
