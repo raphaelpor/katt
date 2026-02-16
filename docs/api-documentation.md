@@ -33,7 +33,7 @@ This document lists the currently available Katt features and how to use them.
 - AI-based classification matcher: `toBeClassifiedAs`
 - Prompt execution with provider-specific runtime options
 - Prompt loading from files with relative-path resolution
-- Default runtime configuration via `katt.json` (`gh-copilot` or `codex`)
+- Default runtime configuration via `katt.json` (or `--config-file`) for `gh-copilot`/`codex`
 - Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
@@ -158,11 +158,11 @@ Sends `input` to the AI model and returns the response string.
   - `config?: string | string[]` (forwarded as `codex exec --config`)
   - `workingDirectory?: string`
 - `timeoutMs?: number` to control how long to wait for prompt completion
-- Explicit options override matching keys from `katt.json` `agentOptions`
+- Explicit options override matching keys from config `agentOptions`
 
 Timeout precedence:
 - `options.timeoutMs` (when valid and positive)
-- `katt.json` `prompt.timeoutMs` (when valid and positive)
+- Config `prompt.timeoutMs` (when valid and positive)
 - Built-in default: `600000` ms
 
 ```ts
@@ -224,6 +224,10 @@ Behavior:
 - Supported agents:
   - `gh-copilot` (default when `agent` is missing or unsupported)
   - `codex`
+- Default config location is `<cwd>/katt.json`
+- CLI override: `--config-file <path>` or `--config-file=<path>`
+  - Relative paths are resolved from `process.cwd()`
+  - Absolute paths are used as-is
 - `prompt("...")` and `promptFile("...")` use `agentOptions` as default
   options for the selected agent runtime
 - Passing `options` to `prompt`/`promptFile` overrides matching keys from config
@@ -235,6 +239,8 @@ Behavior:
 
 - `-h`, `--help`: prints usage and option information, then exits with code `0`
 - `-u`, `--update-snapshots`: updates snapshot files on mismatch
+- `--config-file <path>`: use a custom config file instead of `<cwd>/katt.json`
+  - Missing value causes exit code `1`
 
 ### Eval file discovery
 

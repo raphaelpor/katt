@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolve } from "node:path";
 import {
   getDefaultCopilotConfig,
   getDefaultCopilotModel,
   getDefaultKattConfig,
   getDefaultPromptTimeoutMs,
+  setKattConfigFilePath,
 } from "./config.js";
 
 const readFileMock = vi.fn();
@@ -15,6 +17,7 @@ vi.mock("node:fs/promises", () => ({
 describe("getDefaultCopilotModel", () => {
   afterEach(() => {
     readFileMock.mockReset();
+    setKattConfigFilePath(undefined);
     vi.restoreAllMocks();
   });
 
@@ -83,6 +86,7 @@ describe("getDefaultCopilotModel", () => {
 describe("getDefaultCopilotConfig", () => {
   afterEach(() => {
     readFileMock.mockReset();
+    setKattConfigFilePath(undefined);
     vi.restoreAllMocks();
   });
 
@@ -187,6 +191,7 @@ describe("getDefaultCopilotConfig", () => {
 describe("getDefaultPromptTimeoutMs", () => {
   afterEach(() => {
     readFileMock.mockReset();
+    setKattConfigFilePath(undefined);
     vi.restoreAllMocks();
   });
 
@@ -235,6 +240,7 @@ describe("getDefaultPromptTimeoutMs", () => {
 describe("getDefaultKattConfig", () => {
   afterEach(() => {
     readFileMock.mockReset();
+    setKattConfigFilePath(undefined);
     vi.restoreAllMocks();
   });
 
@@ -294,5 +300,34 @@ describe("getDefaultKattConfig", () => {
       },
       promptTimeoutMs: 450000,
     });
+  });
+
+  it("reads custom config path when configured", async () => {
+    setKattConfigFilePath("./config/custom-katt.json");
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: { model: "gpt-5.2" },
+      }),
+    );
+
+    await getDefaultKattConfig();
+
+    expect(readFileMock).toHaveBeenCalledWith(
+      resolve(process.cwd(), "./config/custom-katt.json"),
+      "utf8",
+    );
+  });
+
+  it("warns with custom config path when custom config cannot be read", async () => {
+    setKattConfigFilePath("./config/custom-katt.json");
+    readFileMock.mockRejectedValue(new Error("permission denied"));
+    const warningSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await getDefaultKattConfig();
+
+    expect(warningSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to read ./config/custom-katt.json:"),
+    );
   });
 });

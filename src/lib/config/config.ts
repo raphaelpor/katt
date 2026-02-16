@@ -17,6 +17,36 @@ export type KattDefaults = {
 };
 
 const DEFAULT_AGENT: KattAgent = "gh-copilot";
+const DEFAULT_CONFIG_FILE_NAME = "katt.json";
+let configuredConfigFilePath: string | undefined;
+
+type ConfigPathDetails = {
+  resolvedPath: string;
+  label: string;
+};
+
+function getConfigPathDetails(): ConfigPathDetails {
+  if (
+    typeof configuredConfigFilePath === "string" &&
+    configuredConfigFilePath.length > 0
+  ) {
+    return {
+      resolvedPath: resolve(process.cwd(), configuredConfigFilePath),
+      label: configuredConfigFilePath,
+    };
+  }
+
+  return {
+    resolvedPath: resolve(process.cwd(), DEFAULT_CONFIG_FILE_NAME),
+    label: DEFAULT_CONFIG_FILE_NAME,
+  };
+}
+
+export function setKattConfigFilePath(
+  configFilePath: string | undefined,
+): void {
+  configuredConfigFilePath = configFilePath;
+}
 
 function isNodeErrorWithCode(
   value: unknown,
@@ -30,7 +60,10 @@ function isNodeErrorWithCode(
   );
 }
 
-function parseKattConfig(content: string): KattConfig | undefined {
+function parseKattConfig(
+  content: string,
+  configFileLabel: string,
+): KattConfig | undefined {
   try {
     const parsed = JSON.parse(content);
     if (typeof parsed === "object" && parsed !== null) {
@@ -38,23 +71,23 @@ function parseKattConfig(content: string): KattConfig | undefined {
     }
     return undefined;
   } catch (error) {
-    console.warn(`Failed to parse katt.json: ${String(error)}`);
+    console.warn(`Failed to parse ${configFileLabel}: ${String(error)}`);
     return undefined;
   }
 }
 
 async function readKattConfig(): Promise<KattConfig | undefined> {
-  const configPath = resolve(process.cwd(), "katt.json");
+  const { resolvedPath, label } = getConfigPathDetails();
 
   try {
-    const content = await readFile(configPath, "utf8");
-    return parseKattConfig(content);
+    const content = await readFile(resolvedPath, "utf8");
+    return parseKattConfig(content, label);
   } catch (error) {
     if (isNodeErrorWithCode(error, "ENOENT")) {
       return undefined;
     }
 
-    console.warn(`Failed to read katt.json: ${String(error)}`);
+    console.warn(`Failed to read ${label}: ${String(error)}`);
     return undefined;
   }
 }

@@ -3,16 +3,20 @@
 ## Scope
 
 This spec defines the currently supported behavior for project-level
-configuration loaded from `katt.json`.
+configuration loaded from `katt.json` or a user-provided path via CLI.
 
-Agent runtime configuration and prompt timeout defaults loaded from `katt.json`
-are in scope.
+Agent runtime configuration and prompt timeout defaults loaded from config are
+in scope.
 
 ## File Location
 
-- Configuration file name: `katt.json`
-- Resolution base: `process.cwd()`
-- Resolved path: `<cwd>/katt.json`
+- Default configuration file name: `katt.json`
+- Default resolution base: `process.cwd()`
+- Default resolved path: `<cwd>/katt.json`
+- Optional override via CLI:
+  - `--config-file <path>` or `--config-file=<path>`
+  - Relative paths are resolved from `process.cwd()`
+  - Absolute paths are used as-is
 
 No parent-directory search is performed.
 
@@ -59,21 +63,24 @@ value.
 
 `getDefaultKattConfig()`:
 
-1. Attempts to read `<cwd>/katt.json` as UTF-8.
-2. If file is missing (`ENOENT`), returns defaults:
+1. Resolves active config path:
+   - `<cwd>/katt.json` by default
+   - overridden by `--config-file` when provided
+2. Attempts to read resolved config file as UTF-8.
+3. If file is missing (`ENOENT`), returns defaults:
    - `agent: "gh-copilot"`
    - `agentOptions: undefined`
    - `promptTimeoutMs: undefined`
-3. Parses JSON content.
-4. Resolves `agent`:
+4. Parses JSON content.
+5. Resolves `agent`:
    - Uses `agent` when it is `"gh-copilot"` or `"codex"`
    - Otherwise falls back to `"gh-copilot"`
-5. Returns `agentOptions` only when:
+6. Returns `agentOptions` only when:
    - `agent` in file is a supported value, and
    - `agentOptions` is a JSON object.
-6. If `agentOptions.model` exists but is not a non-empty string, `model` is
+7. If `agentOptions.model` exists but is not a non-empty string, `model` is
    removed.
-7. Returns `undefined` for `agentOptions` when no valid keys remain after
+8. Returns `undefined` for `agentOptions` when no valid keys remain after
    normalization.
 
 `getDefaultCopilotConfig()`:
@@ -84,22 +91,23 @@ value.
 
 `getDefaultPromptTimeoutMs()`:
 
-1. Attempts to read `<cwd>/katt.json` as UTF-8.
-2. If file is missing (`ENOENT`), returns `undefined`.
-3. Parses JSON content.
-4. Reads `prompt.timeoutMs` only when `prompt` is a JSON object.
-5. Returns normalized timeout when it is a positive finite number:
+1. Resolves active config path (default `katt.json`, optional CLI override).
+2. Attempts to read resolved config file as UTF-8.
+3. If file is missing (`ENOENT`), returns `undefined`.
+4. Parses JSON content.
+5. Reads `prompt.timeoutMs` only when `prompt` is a JSON object.
+6. Returns normalized timeout when it is a positive finite number:
    - Value is floored to an integer.
-6. Returns `undefined` for invalid/missing timeout values.
+7. Returns `undefined` for invalid/missing timeout values.
 
 ### Invalid data handling
 
 - Invalid JSON:
   - Returns defaults/`undefined` values as applicable
-  - Logs warning beginning with `Failed to parse katt.json:`
+  - Logs warning beginning with `Failed to parse <config-file>:`
 - Read error other than `ENOENT`:
   - Returns defaults/`undefined` values as applicable
-  - Logs warning beginning with `Failed to read katt.json:`
+  - Logs warning beginning with `Failed to read <config-file>:`
 - Non-object JSON values (for top-level, `agentOptions`, `prompt`):
   - Treated as invalid config sections
 - Unsupported `agent` values:
@@ -116,10 +124,10 @@ value.
 
 For `prompt(input, options?)` and `promptFile(filePath, options?)`:
 
-1. Resolve active runtime from `katt.json` `agent`:
+1. Resolve active runtime from config `agent`:
    - `"gh-copilot"` or `"codex"`
    - fallback `"gh-copilot"` when missing/unsupported
-2. Start from `katt.json` `agentOptions` when available for the selected
+2. Start from config `agentOptions` when available for the selected
    runtime.
 3. Merge in `options` from `prompt()`/`promptFile()`, where explicit call
    options override matching config keys.
@@ -129,10 +137,18 @@ For `prompt(input, options?)` and `promptFile(filePath, options?)`:
    - `codex`: run `codex exec` with mapped supported options
 6. Resolve prompt timeout with precedence:
    - `options.timeoutMs` (valid positive number)
-   - `katt.json` `prompt.timeoutMs` (valid positive number)
+   - config `prompt.timeoutMs` (valid positive number)
    - default `600000` milliseconds
+
+## CLI Flag Behavior
+
+- `--config-file <path>` sets the config file path used by all prompts in that
+  CLI invocation.
+- `--config-file=<path>` is equivalent.
+- Missing value for `--config-file` causes CLI failure with exit code `1`.
+- `--help` exits early and does not require/parse `--config-file`.
 
 ## Non-Goals
 
 - Defining environment-variable config
-- Defining config discovery outside `process.cwd()`
+- Defining parent-directory config discovery

@@ -34,17 +34,19 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 ### `prompt()`
 
-1. Loads defaults from `katt.json`.
+1. Loads defaults from active config:
+   - default: `<cwd>/katt.json`
+   - CLI override: `--config-file <path>`
 2. Resolves active runtime:
    - `gh-copilot` or `codex`
    - defaults to `gh-copilot` when `agent` is missing/unsupported.
 3. Resolves runtime options:
-   - merges `katt.json` `agentOptions` (base) with explicit `options`
+   - merges config `agentOptions` (base) with explicit `options`
    - explicit `options` override matching keys
    - `model` is normalized to a non-empty string only.
 4. Resolves prompt timeout:
    - `options.timeoutMs` (if valid positive number) has highest precedence.
-   - `katt.json` `prompt.timeoutMs` (if valid positive number) is fallback.
+   - config `prompt.timeoutMs` (if valid positive number) is fallback.
    - default timeout is `600000` milliseconds.
 5. Executes using selected runtime:
    - `gh-copilot`:
