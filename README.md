@@ -131,7 +131,8 @@ You can also set a default model for the project by adding a `katt.json` file in
 
 ```json
 {
-  "copilot": {
+  "agent": "gh-copilot",
+  "agentOptions": {
     "model": "gpt-5-mini"
   },
   "prompt": {
@@ -142,7 +143,7 @@ You can also set a default model for the project by adding a `katt.json` file in
 
 When this file exists:
 
-- `prompt("...")` and `promptFile("...")` use `copilot.model` by default
+- `prompt("...")` and `promptFile("...")` use `agentOptions.model` by default when `agent` is `"gh-copilot"`
 - `prompt("...", { model: "..." })` still overrides the config value
 - `prompt.timeoutMs` sets the default wait timeout for long-running prompts
 

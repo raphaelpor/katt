@@ -5,8 +5,8 @@
 This spec defines the currently supported behavior for project-level configuration
 loaded from `katt.json`.
 
-Copilot session configuration and prompt timeout defaults loaded from
-`katt.json` are in scope.
+Agent session configuration and prompt timeout defaults loaded from `katt.json`
+are in scope.
 
 ## File Location
 
@@ -18,11 +18,13 @@ No parent-directory search is performed.
 
 ## Supported Schema
 
-Top-level JSON object with optional `copilot` and `prompt` objects:
+Top-level JSON object with optional `agent`, `agentOptions`, and `prompt`
+objects:
 
 ```json
 {
-  "copilot": {
+  "agent": "gh-copilot",
+  "agentOptions": {
     "model": "gpt-5-mini",
     "anyOtherCopilotKey": "allowed"
   },
@@ -34,14 +36,16 @@ Top-level JSON object with optional `copilot` and `prompt` objects:
 
 Supported keys:
 
-- `copilot?: object`
-- `copilot.model?: string`
-- Any additional `copilot` keys supported by Copilot session creation are allowed
-  and forwarded to the Copilot session request.
+- `agent?: string`
+- `agentOptions?: object`
+- `agentOptions.model?: string`
+- Any additional `agentOptions` keys supported by Copilot session creation are
+  allowed and forwarded to the Copilot session request.
 - `prompt?: object`
 - `prompt.timeoutMs?: number` (positive values only)
 
-Within `copilot`, additional keys are treated as Copilot session options.
+Only `agent: "gh-copilot"` is currently recognized for session configuration.
+Within `agentOptions`, additional keys are treated as Copilot session options.
 Within `prompt`, only `timeoutMs` is currently read.
 
 ## Functional Behavior
@@ -53,9 +57,12 @@ Within `prompt`, only `timeoutMs` is currently read.
 1. Attempts to read `<cwd>/katt.json` as UTF-8.
 2. If file is missing (`ENOENT`), returns `undefined`.
 3. Parses JSON content.
-4. Returns `copilot` only when it is a JSON object.
-5. If `copilot.model` exists but is not a non-empty string, `model` is removed.
-6. Returns `undefined` when no valid `copilot` options remain after normalization.
+4. Returns `agentOptions` only when:
+   - `agent` is `"gh-copilot"`, and
+   - `agentOptions` is a JSON object.
+5. If `agentOptions.model` exists but is not a non-empty string, `model` is
+   removed.
+6. Returns `undefined` when no valid `agentOptions` remain after normalization.
 
 `getDefaultPromptTimeoutMs()`:
 
@@ -78,12 +85,15 @@ Within `prompt`, only `timeoutMs` is currently read.
 - Non-object JSON values (e.g. string/number/array/null):
   - Treated as invalid config
   - Returns `undefined`
-- Non-object `copilot` values:
-  - Treated as invalid `copilot` config
+- Unsupported `agent` values:
+  - Treated as unsupported session provider config
   - Returns `undefined`
-- Missing/empty/non-string `copilot.model`:
+- Non-object `agentOptions` values:
+  - Treated as invalid `agentOptions` config
+  - Returns `undefined`
+- Missing/empty/non-string `agentOptions.model`:
   - `model` is not forwarded
-  - Other valid `copilot` keys still apply
+  - Other valid `agentOptions` keys still apply
 - Non-object `prompt` values:
   - Treated as invalid `prompt` config
   - Returns `undefined` timeout
@@ -95,7 +105,8 @@ Within `prompt`, only `timeoutMs` is currently read.
 
 For `prompt(input, options?)` and `promptFile(filePath, options?)`:
 
-1. Start from `katt.json` `copilot` session options when available.
+1. Start from `katt.json` `agentOptions` session options when available (for
+   `agent: "gh-copilot"`).
 2. Merge in `options` from `prompt()`/`promptFile()`, where explicit call options
    override config values for matching keys.
 3. Normalize `model` to only a non-empty string.

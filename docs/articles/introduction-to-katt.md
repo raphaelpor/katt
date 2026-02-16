@@ -161,7 +161,8 @@ Katt supports project defaults through `katt.json` at your current working direc
 
 ```json
 {
-  "copilot": {
+  "agent": "gh-copilot",
+  "agentOptions": {
     "model": "gpt-5-mini",
     "reasoningEffort": "high",
     "streaming": true

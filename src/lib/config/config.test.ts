@@ -31,7 +31,10 @@ describe("getDefaultCopilotModel", () => {
 
   it("returns model from katt.json when configured", async () => {
     readFileMock.mockResolvedValue(
-      JSON.stringify({ copilot: { model: "gpt-5.2" } }),
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: { model: "gpt-5.2" },
+      }),
     );
 
     const result = await getDefaultCopilotModel();
@@ -51,8 +54,13 @@ describe("getDefaultCopilotModel", () => {
     );
   });
 
-  it("returns undefined when copilot.model is missing or invalid", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify({ copilot: { model: 123 } }));
+  it("returns undefined when agentOptions.model is missing or invalid", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: { model: 123 },
+      }),
+    );
 
     const result = await getDefaultCopilotModel();
 
@@ -89,10 +97,15 @@ describe("getDefaultCopilotConfig", () => {
     expect(result).toBeUndefined();
   });
 
-  it("returns copilot config from katt.json when configured", async () => {
+  it("returns agentOptions from katt.json when configured", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify({
-        copilot: { model: "gpt-5.2", reasoningEffort: "high", streaming: true },
+        agent: "gh-copilot",
+        agentOptions: {
+          model: "gpt-5.2",
+          reasoningEffort: "high",
+          streaming: true,
+        },
       }),
     );
 
@@ -107,7 +120,10 @@ describe("getDefaultCopilotConfig", () => {
 
   it("filters empty string model while preserving other settings", async () => {
     readFileMock.mockResolvedValue(
-      JSON.stringify({ copilot: { model: "", streaming: true } }),
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: { model: "", streaming: true },
+      }),
     );
 
     const result = await getDefaultCopilotConfig();
@@ -115,8 +131,39 @@ describe("getDefaultCopilotConfig", () => {
     expect(result).toEqual({ streaming: true });
   });
 
-  it("returns undefined when copilot is not an object", async () => {
-    readFileMock.mockResolvedValue(JSON.stringify({ copilot: "invalid" }));
+  it("returns undefined when agent is unsupported", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "openai",
+        agentOptions: { model: "gpt-5.2" },
+      }),
+    );
+
+    const result = await getDefaultCopilotConfig();
+
+    expect(result).toBeUndefined();
+  });
+
+  it("returns undefined when agentOptions is not an object", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: "invalid",
+      }),
+    );
+
+    const result = await getDefaultCopilotConfig();
+
+    expect(result).toBeUndefined();
+  });
+
+  it("returns undefined when only invalid model exists in agentOptions", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "gh-copilot",
+        agentOptions: { model: "" },
+      }),
+    );
 
     const result = await getDefaultCopilotConfig();
 
@@ -178,10 +225,11 @@ describe("getDefaultKattConfig", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns both copilot and prompt defaults when configured", async () => {
+  it("returns both agent options and prompt defaults when configured", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify({
-        copilot: { model: "gpt-5.2", streaming: true },
+        agent: "gh-copilot",
+        agentOptions: { model: "gpt-5.2", streaming: true },
         prompt: { timeoutMs: 300000 },
       }),
     );
@@ -189,7 +237,7 @@ describe("getDefaultKattConfig", () => {
     const result = await getDefaultKattConfig();
 
     expect(result).toEqual({
-      copilot: { model: "gpt-5.2", streaming: true },
+      agentOptions: { model: "gpt-5.2", streaming: true },
       promptTimeoutMs: 300000,
     });
   });

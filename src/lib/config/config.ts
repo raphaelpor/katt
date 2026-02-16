@@ -3,12 +3,13 @@ import { resolve } from "node:path";
 import type { SessionConfig } from "@github/copilot-sdk";
 
 type KattConfig = {
-  copilot?: unknown;
+  agent?: unknown;
+  agentOptions?: unknown;
   prompt?: unknown;
 };
 
 export type KattDefaults = {
-  copilot?: SessionConfig;
+  agentOptions?: SessionConfig;
   promptTimeoutMs?: number;
 };
 
@@ -56,17 +57,21 @@ async function readKattConfig(): Promise<KattConfig | undefined> {
 function readCopilotConfig(
   config: KattConfig | undefined,
 ): SessionConfig | undefined {
-  const copilot = config?.copilot;
+  if (config?.agent !== "gh-copilot") {
+    return undefined;
+  }
+
+  const agentOptions = config.agentOptions;
   if (
-    typeof copilot !== "object" ||
-    copilot === null ||
-    Array.isArray(copilot)
+    typeof agentOptions !== "object" ||
+    agentOptions === null ||
+    Array.isArray(agentOptions)
   ) {
     return undefined;
   }
 
   const sessionConfig = {
-    ...(copilot as Record<string, unknown>),
+    ...(agentOptions as Record<string, unknown>),
   } as SessionConfig;
 
   const model = sessionConfig.model;
@@ -101,7 +106,7 @@ function readPromptTimeoutMs(
 export async function getDefaultKattConfig(): Promise<KattDefaults> {
   const config = await readKattConfig();
   return {
-    copilot: readCopilotConfig(config),
+    agentOptions: readCopilotConfig(config),
     promptTimeoutMs: readPromptTimeoutMs(config),
   };
 }
@@ -110,7 +115,7 @@ export async function getDefaultCopilotConfig(): Promise<
   SessionConfig | undefined
 > {
   const config = await getDefaultKattConfig();
-  return config.copilot;
+  return config.agentOptions;
 }
 
 export async function getDefaultPromptTimeoutMs(): Promise<number | undefined> {

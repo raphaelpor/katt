@@ -76,7 +76,7 @@ export async function prompt(
 ): Promise<string> {
   const { timeoutMs: explicitTimeoutMsRaw, ...explicitSessionConfig } = options;
   const defaults = await getDefaultKattConfig();
-  const configOptions = normalizeSessionConfig(defaults.copilot);
+  const configOptions = normalizeSessionConfig(defaults.agentOptions);
   const explicitOptions = normalizeSessionConfig(
     explicitSessionConfig as SessionConfig,
   );

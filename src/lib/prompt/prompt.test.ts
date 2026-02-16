@@ -44,7 +44,7 @@ function setupSessionMocks(
   destroyError?: Error,
 ) {
   getDefaultKattConfigMock.mockResolvedValue({
-    copilot: undefined,
+    agentOptions: undefined,
     promptTimeoutMs: undefined,
   });
   sendAndWaitMock = vi.fn().mockResolvedValue({ data: { content: "ok" } });
@@ -115,7 +115,7 @@ describe("prompt", () => {
   it("passes the model to Copilot session creation when provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: { model: "gpt-4o" },
+      agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
 
@@ -127,7 +127,7 @@ describe("prompt", () => {
   it("uses model from katt.json when no explicit model is provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: { model: "gpt-4o" },
+      agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
 
@@ -136,10 +136,10 @@ describe("prompt", () => {
     expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-4o" });
   });
 
-  it("passes non-model copilot config options from katt.json to session creation", async () => {
+  it("passes non-model agent options from katt.json to session creation", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: {
+      agentOptions: {
         model: "gpt-4o",
         reasoningEffort: "high",
         streaming: true,
@@ -159,7 +159,7 @@ describe("prompt", () => {
   it("allows explicit options to override katt.json session options", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: {
+      agentOptions: {
         model: "gpt-4o",
         streaming: false,
       },
@@ -185,7 +185,7 @@ describe("prompt", () => {
   it("tracks config model usage for the active test", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: { model: "gpt-4o" },
+      agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
 
@@ -197,7 +197,7 @@ describe("prompt", () => {
   it("uses prompt timeout from katt.json when no explicit timeout is provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: undefined,
+      agentOptions: undefined,
       promptTimeoutMs: 240000,
     });
 
@@ -209,7 +209,7 @@ describe("prompt", () => {
   it("lets explicit timeout override katt.json prompt timeout", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: undefined,
+      agentOptions: undefined,
       promptTimeoutMs: 240000,
     });
 
@@ -221,7 +221,7 @@ describe("prompt", () => {
   it("ignores invalid timeout values and falls back to the default timeout", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
-      copilot: undefined,
+      agentOptions: undefined,
       promptTimeoutMs: -1,
     });
 

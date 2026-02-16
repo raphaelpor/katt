@@ -38,7 +38,7 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 2. Starts the client session lifecycle.
 3. Creates a Copilot session:
    - Uses merged options from:
-     - `katt.json` `copilot` config (base)
+     - `katt.json` `agentOptions` config (base, when `agent` is `"gh-copilot"`)
      - explicit `options` (override)
    - With default session options when merged options are empty.
 4. Resolves prompt timeout:
