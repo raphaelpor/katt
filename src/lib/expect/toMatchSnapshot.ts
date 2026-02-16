@@ -108,7 +108,7 @@ export function toMatchSnapshot(result: string): void {
         "Diff:",
         diff,
         "",
-        "Run katt with --update-snapshots (or -u) to accept this change.",
+        "Run 'npx katt --update-snapshots' (or -u) to accept this change.",
       ].join("\n"),
     );
   } catch (error) {

@@ -85,7 +85,7 @@ describe("toMatchSnapshot", () => {
           "- there",
           "+ world",
           "",
-          "Run katt with --update-snapshots (or -u) to accept this change.",
+          "Run 'npx katt --update-snapshots' (or -u) to accept this change.",
         ].join("\n"),
       },
     ]);
