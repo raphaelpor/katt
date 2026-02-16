@@ -20,6 +20,7 @@ This document lists the currently available Katt features and how to use them.
 - [Configuration](#configuration)
 - [`katt.json`](#kattjson)
 - [CLI Behavior](#cli-behavior)
+- [CLI flags](#cli-flags)
 - [Eval file discovery](#eval-file-discovery)
 - [Execution and results](#execution-and-results)
 
@@ -109,7 +110,7 @@ expect(result).toMatchSnapshot();
 To accept changed output:
 
 ```bash
-katt --update-snapshots
+npx katt --update-snapshots
 ```
 
 ### `.promptCheck(instructions)`
@@ -201,6 +202,11 @@ Behavior:
 
 ## CLI Behavior
 
+### CLI flags
+
+- `-h`, `--help`: prints usage and option information, then exits with code `0`
+- `-u`, `--update-snapshots`: updates snapshot files on mismatch
+
 ### Eval file discovery
 
 - Recursively finds `*.eval.js` and `*.eval.ts` from current working directory
@@ -213,10 +219,15 @@ Behavior:
 - Waits for pending async tests
 - Prints failures and exits with code `1` on any failure
 - Prints summary and exits with code `0` when all pass
-- Supports `--update-snapshots` (or `-u`) to update snapshot files on mismatch
 
 Run:
 
 ```bash
-katt
+npx katt
+```
+
+Show help:
+
+```bash
+npx katt --help
 ```
