@@ -86,7 +86,7 @@ expect(result).toContain("hello world");
 2. Run Katt from your project directory:
 
 ```bash
-katt
+npx katt
 ```
 
 ### Using promptFile

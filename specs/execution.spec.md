@@ -4,7 +4,7 @@
 ## Usage
 
 ```bash
-katt
+npx katt
 ```
 
 ## Execution Flow

@@ -110,7 +110,7 @@ expect(result).toMatchSnapshot();
 To accept changed output:
 
 ```bash
-katt --update-snapshots
+npx katt --update-snapshots
 ```
 
 ### `.promptCheck(instructions)`
@@ -223,11 +223,11 @@ Behavior:
 Run:
 
 ```bash
-katt
+npx katt
 ```
 
 Show help:
 
 ```bash
-katt --help
+npx katt --help
 ```
