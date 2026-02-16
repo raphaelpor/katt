@@ -3,7 +3,7 @@
 A test can use the `expect(value).toMatchSnapshot()` API to have its value saved as a snapshot. On subsequent test runs, the value is compared to the saved snapshot. If the value does not match the snapshot, the test fails.
 
 ## Snapshot Storage
-Snapshots are stored in a `__snapshots__` directory adjacent to the test file. Each snapshot file is named `<testFileName>.snap.md`. For example, snapshots for `greeting.eval.ts` would be stored in `__snapshots__/greeting.snap.md`.
+Snapshots are stored in a `__snapshots__` directory adjacent to the test file. Each snapshot file is unique per test case (`describe` + `it`) and is named `<testFileName>__<describePath>__<itPath>.snap.md`. For example, a test in `greeting.eval.ts` with `describe("Greeting agent")` and `it("should say hello")` would use `__snapshots__/greeting__Greeting_agent__should_say_hello.snap.md`.
 
 ## Snapshot Format
 

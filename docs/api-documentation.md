@@ -95,8 +95,8 @@ expect(result).toContain("1.0.0");
 Stores and compares output snapshots as Markdown files.
 
 Behavior:
-- Snapshot location: `__snapshots__/<evalFileName>.snap.md` next to the eval file
-- Example: `greeting.eval.ts` uses `__snapshots__/greeting.snap.md`
+- Snapshot location: `__snapshots__/<evalFileName>__<describePath>__<itPath>.snap.md` next to the eval file
+- Example: `greeting.eval.ts` with `describe("Greeting agent")` and `it("should say hello")` uses `__snapshots__/greeting__Greeting_agent__should_say_hello.snap.md`
 - Snapshot content is the raw output string with no extra formatting
 - First run creates the snapshot automatically
 - Later runs compare against saved content and fail on mismatch with a diff

@@ -11,6 +11,7 @@ describe('Hello World', () => {
 
         const result = await prompt('Return the current year in the format "{ year: YYYY }"');
         expect(result).toContain(`{ year: ${currentData.getFullYear()} }`);
+        expect(result).toMatchSnapshot();
     });
 
     it('should classify a response as helpful', async () => {

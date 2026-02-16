@@ -1,16 +1,42 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { getDescribeContext, getItContext } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
 import { registerFailure } from "./matcherUtils.js";
 import { getSnapshotUpdateMode } from "./snapshotConfig.js";
 
+function sanitizeSnapshotSegment(segment: string): string {
+  const normalized = segment
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .replace(/\s+/g, "_");
+  return normalized.length > 0 ? normalized : "unnamed";
+}
+
+function buildContextSegment(): string {
+  const describePath = getDescribeContext().map((entry) =>
+    sanitizeSnapshotSegment(entry.description),
+  );
+  const itPath = getItContext().map((entry) =>
+    sanitizeSnapshotSegment(entry.description),
+  );
+  const allSegments = [...describePath, ...itPath];
+
+  if (allSegments.length === 0) {
+    return "root";
+  }
+
+  return allSegments.join("__");
+}
+
 function resolveSnapshotFilePath(evalFilePath: string): string {
   const evalFileName = basename(evalFilePath);
   const snapshotBaseName = evalFileName.replace(/\.eval\.[^./\\]+$/, "");
+  const contextSegment = buildContextSegment();
   return join(
     dirname(evalFilePath),
     "__snapshots__",
-    `${snapshotBaseName}.snap.md`,
+    `${snapshotBaseName}__${contextSegment}.snap.md`,
   );
 }
 
