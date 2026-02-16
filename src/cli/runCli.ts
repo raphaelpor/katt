@@ -20,8 +20,28 @@ function formatStartTime(startTime: Date): string {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+function displayHelp(): void {
+  console.log(
+    [
+      "Usage:",
+      "  katt [options]",
+      "",
+      "Options:",
+      "  -h, --help              Show CLI usage information",
+      "  -u, --update-snapshots  Update snapshot files on mismatch",
+    ].join("\n"),
+  );
+}
+
 export async function runCli(): Promise<number> {
   const args = process.argv.slice(2);
+  const shouldShowHelp = args.includes("--help") || args.includes("-h");
+  if (shouldShowHelp) {
+    displayBanner();
+    displayHelp();
+    return 0;
+  }
+
   const shouldUpdateSnapshots =
     args.includes("--update-snapshots") || args.includes("-u");
   setSnapshotUpdateMode(shouldUpdateSnapshots);

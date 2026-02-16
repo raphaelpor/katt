@@ -105,6 +105,45 @@ describe("runCli", () => {
     expect(logSpy).toHaveBeenCalledWith("No .eval.js or .eval.ts files found.");
   });
 
+  it("returns 0 and prints help when --help is passed", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const originalArgv = process.argv;
+    let exitCode = 1;
+    try {
+      process.argv = ["node", "katt", "--help"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockFindEvalFiles).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("-h, --help"));
+  });
+
+  it("returns 0 and prints help when -h is passed", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const originalArgv = process.argv;
+    let exitCode = 1;
+    try {
+      process.argv = ["node", "katt", "-h"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockFindEvalFiles).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
+  });
+
   it("enables snapshot update mode when -u is passed", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
