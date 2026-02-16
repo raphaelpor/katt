@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { SessionConfig } from "@github/copilot-sdk";
 
+export type KattAgent = "gh-copilot" | "codex";
+
 type KattConfig = {
   agent?: unknown;
   agentOptions?: unknown;
@@ -9,9 +11,12 @@ type KattConfig = {
 };
 
 export type KattDefaults = {
-  agentOptions?: SessionConfig;
+  agent: KattAgent;
+  agentOptions?: Record<string, unknown>;
   promptTimeoutMs?: number;
 };
+
+const DEFAULT_AGENT: KattAgent = "gh-copilot";
 
 function isNodeErrorWithCode(
   value: unknown,
@@ -54,10 +59,23 @@ async function readKattConfig(): Promise<KattConfig | undefined> {
   }
 }
 
-function readCopilotConfig(
+function readSupportedAgent(agent: unknown): KattAgent | undefined {
+  if (agent === "gh-copilot" || agent === "codex") {
+    return agent;
+  }
+
+  return undefined;
+}
+
+function readAgentConfig(
   config: KattConfig | undefined,
-): SessionConfig | undefined {
-  if (config?.agent !== "gh-copilot") {
+  agent: KattAgent,
+): Record<string, unknown> | undefined {
+  if (!config) {
+    return undefined;
+  }
+
+  if (readSupportedAgent(config?.agent) !== agent) {
     return undefined;
   }
 
@@ -70,10 +88,7 @@ function readCopilotConfig(
     return undefined;
   }
 
-  const sessionConfig = {
-    ...(agentOptions as Record<string, unknown>),
-  } as SessionConfig;
-
+  const sessionConfig = { ...(agentOptions as Record<string, unknown>) };
   const model = sessionConfig.model;
   if (typeof model !== "string" || model.length === 0) {
     delete sessionConfig.model;
@@ -105,8 +120,11 @@ function readPromptTimeoutMs(
 
 export async function getDefaultKattConfig(): Promise<KattDefaults> {
   const config = await readKattConfig();
+  const agent = readSupportedAgent(config?.agent) ?? DEFAULT_AGENT;
+
   return {
-    agentOptions: readCopilotConfig(config),
+    agent,
+    agentOptions: readAgentConfig(config, agent),
     promptTimeoutMs: readPromptTimeoutMs(config),
   };
 }
@@ -115,7 +133,11 @@ export async function getDefaultCopilotConfig(): Promise<
   SessionConfig | undefined
 > {
   const config = await getDefaultKattConfig();
-  return config.agentOptions;
+  if (config.agent !== "gh-copilot") {
+    return undefined;
+  }
+
+  return config.agentOptions as SessionConfig | undefined;
 }
 
 export async function getDefaultPromptTimeoutMs(): Promise<number | undefined> {

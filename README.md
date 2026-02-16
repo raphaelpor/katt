@@ -68,6 +68,7 @@ describe("Greeting agent", () => {
 - **Classification Matcher**: Built-in `toBeClassifiedAs()` matcher to grade a response against a target label on a 1-5 scale
 - **Concurrent Execution**: Runs eval files concurrently for faster test execution
 - **Model Selection**: Support for specifying custom AI models
+- **Runtime Selection**: Run prompts through GitHub Copilot (default) or Codex
 - **Configurable Timeouts**: Override prompt wait time per test or via `katt.json`
 
 ## Usage
@@ -127,7 +128,9 @@ describe("Model selection", () => {
 });
 ```
 
-You can also set a default model for the project by adding a `katt.json` file in the project root:
+You can also set runtime defaults in `katt.json`.
+
+Copilot (default runtime):
 
 ```json
 {
@@ -141,10 +144,29 @@ You can also set a default model for the project by adding a `katt.json` file in
 }
 ```
 
+Codex:
+
+```json
+{
+  "agent": "codex",
+  "agentOptions": {
+    "model": "gpt-5-codex",
+    "profile": "default",
+    "sandbox": "workspace-write"
+  },
+  "prompt": {
+    "timeoutMs": 240000
+  }
+}
+```
+
 When this file exists:
 
-- `prompt("...")` and `promptFile("...")` use `agentOptions.model` by default when `agent` is `"gh-copilot"`
-- `prompt("...", { model: "..." })` still overrides the config value
+- Supported agents are:
+  - `gh-copilot` (default when `agent` is missing or unsupported)
+  - `codex`
+- `prompt("...")` and `promptFile("...")` merge `agentOptions` with call-time options
+- `prompt("...", { model: "..." })` overrides the model from config
 - `prompt.timeoutMs` sets the default wait timeout for long-running prompts
 
 ## Development
@@ -202,8 +224,8 @@ katt/
 ## Requirements
 
 - Node.js
-- GitHub Copilot CLI installed (see [GitHub Copilot CLI installation docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/install-copilot-cli))
-- Access to AI models (e.g., OpenAI API key for Codex)
+- For `gh-copilot` runtime: access to GitHub Copilot with a logged-in user
+- For `codex` runtime: Codex CLI installed and authenticated (`codex login`)
 
 ## License
 

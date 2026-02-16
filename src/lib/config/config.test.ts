@@ -144,6 +144,19 @@ describe("getDefaultCopilotConfig", () => {
     expect(result).toBeUndefined();
   });
 
+  it("returns undefined when agent is codex", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "codex",
+        agentOptions: { model: "gpt-5-codex" },
+      }),
+    );
+
+    const result = await getDefaultCopilotConfig();
+
+    expect(result).toBeUndefined();
+  });
+
   it("returns undefined when agentOptions is not an object", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify({
@@ -237,8 +250,49 @@ describe("getDefaultKattConfig", () => {
     const result = await getDefaultKattConfig();
 
     expect(result).toEqual({
+      agent: "gh-copilot",
       agentOptions: { model: "gpt-5.2", streaming: true },
       promptTimeoutMs: 300000,
+    });
+  });
+
+  it("defaults to gh-copilot when agent is missing", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agentOptions: { model: "gpt-5.2" },
+      }),
+    );
+
+    const result = await getDefaultKattConfig();
+
+    expect(result).toEqual({
+      agent: "gh-copilot",
+      agentOptions: undefined,
+      promptTimeoutMs: undefined,
+    });
+  });
+
+  it("returns codex defaults when configured", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "codex",
+        agentOptions: {
+          model: "gpt-5-codex",
+          profile: "default",
+        },
+        prompt: { timeoutMs: 450000 },
+      }),
+    );
+
+    const result = await getDefaultKattConfig();
+
+    expect(result).toEqual({
+      agent: "codex",
+      agentOptions: {
+        model: "gpt-5-codex",
+        profile: "default",
+      },
+      promptTimeoutMs: 450000,
     });
   });
 });

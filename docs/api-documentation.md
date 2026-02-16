@@ -31,9 +31,9 @@ This document lists the currently available Katt features and how to use them.
 - Snapshot matcher: `toMatchSnapshot`
 - AI-based matcher: `promptCheck`
 - AI-based classification matcher: `toBeClassifiedAs`
-- Prompt execution with optional Copilot session option overrides
+- Prompt execution with provider-specific runtime options
 - Prompt loading from files with relative-path resolution
-- Default Copilot session configuration via `katt.json` `agentOptions`
+- Default runtime configuration via `katt.json` (`gh-copilot` or `codex`)
 - Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
@@ -146,9 +146,18 @@ await expect(result).toBeClassifiedAs("helpful", {
 Sends `input` to the AI model and returns the response string.
 
 `options`:
-- Any Copilot session option (for example: `model`, `reasoningEffort`,
-  `streaming`)
-- `timeoutMs?: number` to control how long to wait for `session.idle`
+- For `gh-copilot`: any Copilot session option (for example: `model`,
+  `reasoningEffort`, `streaming`)
+- For `codex`: Codex exec options:
+  - `model?: string`
+  - `profile?: string`
+  - `sandbox?: string`
+  - `fullAuto?: boolean`
+  - `skipGitRepoCheck?: boolean`
+  - `dangerouslyBypassApprovalsAndSandbox?: boolean`
+  - `config?: string | string[]` (forwarded as `codex exec --config`)
+  - `workingDirectory?: string`
+- `timeoutMs?: number` to control how long to wait for prompt completion
 - Explicit options override matching keys from `katt.json` `agentOptions`
 
 Timeout precedence:
@@ -179,7 +188,7 @@ expect(result).toContain("expected phrase");
 
 ### `katt.json`
 
-Set default Copilot session options:
+Set runtime defaults:
 
 ```json
 {
@@ -195,9 +204,28 @@ Set default Copilot session options:
 }
 ```
 
+Or use Codex:
+
+```json
+{
+  "agent": "codex",
+  "agentOptions": {
+    "model": "gpt-5-codex",
+    "profile": "default",
+    "sandbox": "workspace-write"
+  },
+  "prompt": {
+    "timeoutMs": 240000
+  }
+}
+```
+
 Behavior:
+- Supported agents:
+  - `gh-copilot` (default when `agent` is missing or unsupported)
+  - `codex`
 - `prompt("...")` and `promptFile("...")` use `agentOptions` as default
-  session options when `agent` is `"gh-copilot"`
+  options for the selected agent runtime
 - Passing `options` to `prompt`/`promptFile` overrides matching keys from config
 - `prompt.timeoutMs` sets the default wait timeout for prompt completion
 

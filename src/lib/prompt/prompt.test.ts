@@ -7,6 +7,7 @@ const readFileMock = vi.fn();
 const addUsedTokensToCurrentTestMock = vi.fn();
 const setCurrentTestModelMock = vi.fn();
 const getDefaultKattConfigMock = vi.fn();
+const runCodexPromptMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFileMock(...args),
@@ -21,6 +22,10 @@ vi.mock("../context/context.js", () => ({
 vi.mock("../config/config.js", () => ({
   getDefaultKattConfig: (...args: unknown[]) =>
     getDefaultKattConfigMock(...args),
+}));
+
+vi.mock("./codex.js", () => ({
+  runCodexPrompt: (...args: unknown[]) => runCodexPromptMock(...args),
 }));
 
 let sendAndWaitMock: ReturnType<typeof vi.fn>;
@@ -44,9 +49,11 @@ function setupSessionMocks(
   destroyError?: Error,
 ) {
   getDefaultKattConfigMock.mockResolvedValue({
+    agent: "gh-copilot",
     agentOptions: undefined,
     promptTimeoutMs: undefined,
   });
+  runCodexPromptMock.mockResolvedValue("codex response");
   sendAndWaitMock = vi.fn().mockResolvedValue({ data: { content: "ok" } });
   destroyMock = destroyError
     ? vi.fn().mockRejectedValue(destroyError)
@@ -92,6 +99,7 @@ describe("prompt", () => {
     addUsedTokensToCurrentTestMock.mockReset();
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
+    runCodexPromptMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -115,6 +123,7 @@ describe("prompt", () => {
   it("passes the model to Copilot session creation when provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
@@ -127,6 +136,7 @@ describe("prompt", () => {
   it("uses model from katt.json when no explicit model is provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
@@ -139,6 +149,7 @@ describe("prompt", () => {
   it("passes non-model agent options from katt.json to session creation", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: {
         model: "gpt-4o",
         reasoningEffort: "high",
@@ -159,6 +170,7 @@ describe("prompt", () => {
   it("allows explicit options to override katt.json session options", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: {
         model: "gpt-4o",
         streaming: false,
@@ -185,6 +197,7 @@ describe("prompt", () => {
   it("tracks config model usage for the active test", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: { model: "gpt-4o" },
       promptTimeoutMs: undefined,
     });
@@ -197,6 +210,7 @@ describe("prompt", () => {
   it("uses prompt timeout from katt.json when no explicit timeout is provided", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: undefined,
       promptTimeoutMs: 240000,
     });
@@ -209,6 +223,7 @@ describe("prompt", () => {
   it("lets explicit timeout override katt.json prompt timeout", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: undefined,
       promptTimeoutMs: 240000,
     });
@@ -221,6 +236,7 @@ describe("prompt", () => {
   it("ignores invalid timeout values and falls back to the default timeout", async () => {
     setupSessionMocks();
     getDefaultKattConfigMock.mockResolvedValue({
+      agent: "gh-copilot",
       agentOptions: undefined,
       promptTimeoutMs: -1,
     });
@@ -266,6 +282,46 @@ describe("prompt", () => {
       "Copilot cleanup encountered 2 error(s).",
     );
   });
+
+  it("uses Codex runtime when configured", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      agent: "codex",
+      agentOptions: { model: "gpt-5-codex", profile: "default" },
+      promptTimeoutMs: 450000,
+    });
+    runCodexPromptMock.mockResolvedValue("codex answer");
+
+    const result = await prompt("Hello");
+
+    expect(result).toBe("codex answer");
+    expect(runCodexPromptMock).toHaveBeenCalledWith("Hello", 450000, {
+      model: "gpt-5-codex",
+      profile: "default",
+    });
+    expect(createSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("lets explicit options override codex defaults", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      agent: "codex",
+      agentOptions: { model: "gpt-5-codex", profile: "default" },
+      promptTimeoutMs: undefined,
+    });
+
+    await prompt("Hello", { model: "gpt-5.2-codex", profile: "fast" });
+
+    expect(runCodexPromptMock).toHaveBeenCalledWith(
+      "Hello",
+      DEFAULT_PROMPT_TIMEOUT_MS,
+      {
+        model: "gpt-5.2-codex",
+        profile: "fast",
+      },
+    );
+    expect(setCurrentTestModelMock).toHaveBeenCalledWith("gpt-5.2-codex");
+  });
 });
 
 describe("promptFile", () => {
@@ -274,6 +330,7 @@ describe("promptFile", () => {
     addUsedTokensToCurrentTestMock.mockReset();
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
+    runCodexPromptMock.mockReset();
     vi.restoreAllMocks();
   });
 

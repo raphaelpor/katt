@@ -2,10 +2,10 @@
 
 ## Scope
 
-This spec defines the currently supported behavior for project-level configuration
-loaded from `katt.json`.
+This spec defines the currently supported behavior for project-level
+configuration loaded from `katt.json`.
 
-Agent session configuration and prompt timeout defaults loaded from `katt.json`
+Agent runtime configuration and prompt timeout defaults loaded from `katt.json`
 are in scope.
 
 ## File Location
@@ -26,7 +26,7 @@ objects:
   "agent": "gh-copilot",
   "agentOptions": {
     "model": "gpt-5-mini",
-    "anyOtherCopilotKey": "allowed"
+    "anyOtherProviderKey": "allowed"
   },
   "prompt": {
     "timeoutMs": 600000
@@ -37,32 +37,50 @@ objects:
 Supported keys:
 
 - `agent?: string`
+  - Supported values: `"gh-copilot"`, `"codex"`
+  - Missing/unsupported values default runtime selection to `"gh-copilot"`
 - `agentOptions?: object`
 - `agentOptions.model?: string`
-- Any additional `agentOptions` keys supported by Copilot session creation are
-  allowed and forwarded to the Copilot session request.
+- Additional `agentOptions` behavior:
+  - `gh-copilot`: forwarded to Copilot `createSession(...)`
+  - `codex`: supported keys are translated to `codex exec` flags:
+    - `profile`, `sandbox`, `fullAuto`, `skipGitRepoCheck`,
+      `dangerouslyBypassApprovalsAndSandbox`, `config`, `workingDirectory`
+    - unsupported keys are ignored by the Codex runner
 - `prompt?: object`
 - `prompt.timeoutMs?: number` (positive values only)
 
-Only `agent: "gh-copilot"` is currently recognized for session configuration.
-Within `agentOptions`, additional keys are treated as Copilot session options.
-Within `prompt`, only `timeoutMs` is currently read.
+`agentOptions` are only read when `agent` is explicitly set to a supported
+value.
 
 ## Functional Behavior
 
 ### Reading config
 
-`getDefaultCopilotConfig()`:
+`getDefaultKattConfig()`:
 
 1. Attempts to read `<cwd>/katt.json` as UTF-8.
-2. If file is missing (`ENOENT`), returns `undefined`.
+2. If file is missing (`ENOENT`), returns defaults:
+   - `agent: "gh-copilot"`
+   - `agentOptions: undefined`
+   - `promptTimeoutMs: undefined`
 3. Parses JSON content.
-4. Returns `agentOptions` only when:
-   - `agent` is `"gh-copilot"`, and
+4. Resolves `agent`:
+   - Uses `agent` when it is `"gh-copilot"` or `"codex"`
+   - Otherwise falls back to `"gh-copilot"`
+5. Returns `agentOptions` only when:
+   - `agent` in file is a supported value, and
    - `agentOptions` is a JSON object.
-5. If `agentOptions.model` exists but is not a non-empty string, `model` is
+6. If `agentOptions.model` exists but is not a non-empty string, `model` is
    removed.
-6. Returns `undefined` when no valid `agentOptions` remain after normalization.
+7. Returns `undefined` for `agentOptions` when no valid keys remain after
+   normalization.
+
+`getDefaultCopilotConfig()`:
+
+1. Reads defaults via `getDefaultKattConfig()`.
+2. Returns `agentOptions` only when selected `agent` is `"gh-copilot"`.
+3. Returns `undefined` when selected `agent` is `"codex"`.
 
 `getDefaultPromptTimeoutMs()`:
 
@@ -77,42 +95,39 @@ Within `prompt`, only `timeoutMs` is currently read.
 ### Invalid data handling
 
 - Invalid JSON:
-  - Returns `undefined`
+  - Returns defaults/`undefined` values as applicable
   - Logs warning beginning with `Failed to parse katt.json:`
 - Read error other than `ENOENT`:
-  - Returns `undefined`
+  - Returns defaults/`undefined` values as applicable
   - Logs warning beginning with `Failed to read katt.json:`
-- Non-object JSON values (e.g. string/number/array/null):
-  - Treated as invalid config
-  - Returns `undefined`
+- Non-object JSON values (for top-level, `agentOptions`, `prompt`):
+  - Treated as invalid config sections
 - Unsupported `agent` values:
-  - Treated as unsupported session provider config
-  - Returns `undefined`
-- Non-object `agentOptions` values:
-  - Treated as invalid `agentOptions` config
-  - Returns `undefined`
+  - Runtime defaults to `gh-copilot`
+  - `agentOptions` from file are not applied
 - Missing/empty/non-string `agentOptions.model`:
   - `model` is not forwarded
-  - Other valid `agentOptions` keys still apply
-- Non-object `prompt` values:
-  - Treated as invalid `prompt` config
-  - Returns `undefined` timeout
+  - other valid `agentOptions` keys still apply
 - Missing/non-number/non-positive/non-finite `prompt.timeoutMs`:
   - Treated as unset timeout
-  - Returns `undefined` timeout
+  - returns `undefined` timeout
 
 ## Session Option Precedence
 
 For `prompt(input, options?)` and `promptFile(filePath, options?)`:
 
-1. Start from `katt.json` `agentOptions` session options when available (for
-   `agent: "gh-copilot"`).
-2. Merge in `options` from `prompt()`/`promptFile()`, where explicit call options
-   override config values for matching keys.
-3. Normalize `model` to only a non-empty string.
-4. Create Copilot session with merged options, or default session options when
-   merged options are empty.
-5. Resolve send-and-wait timeout with precedence:
+1. Resolve active runtime from `katt.json` `agent`:
+   - `"gh-copilot"` or `"codex"`
+   - fallback `"gh-copilot"` when missing/unsupported
+2. Start from `katt.json` `agentOptions` when available for the selected
+   runtime.
+3. Merge in `options` from `prompt()`/`promptFile()`, where explicit call
+   options override matching config keys.
+4. Normalize `model` to only a non-empty string.
+5. Execute with selected runtime:
+   - `gh-copilot`: create Copilot session with merged options
+   - `codex`: run `codex exec` with mapped supported options
+6. Resolve prompt timeout with precedence:
    - `options.timeoutMs` (valid positive number)
    - `katt.json` `prompt.timeoutMs` (valid positive number)
    - default `600000` milliseconds

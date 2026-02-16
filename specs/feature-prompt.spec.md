@@ -16,8 +16,8 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 - Input:
   - `input: string`
-  - `options?: SessionConfig & { timeoutMs?: number }`
-    - `timeoutMs` controls how long to wait for `session.idle`.
+  - `options?: Record<string, unknown> & { timeoutMs?: number }`
+    - `timeoutMs` controls how long to wait for completion.
 - Output:
   - `Promise<string>` containing the assistant response content.
 
@@ -25,7 +25,7 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 - Input:
   - `filePath: string`
-  - `options?: SessionConfig & { timeoutMs?: number }`
+  - `options?: Record<string, unknown> & { timeoutMs?: number }`
 - Output:
   - `Promise<string>` containing the assistant response content after sending
     file contents as the prompt.
@@ -34,40 +34,56 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
 
 ### `prompt()`
 
-1. Creates a Copilot client with logged-in-user auth.
-2. Starts the client session lifecycle.
-3. Creates a Copilot session:
-   - Uses merged options from:
-     - `katt.json` `agentOptions` config (base, when `agent` is `"gh-copilot"`)
-     - explicit `options` (override)
-   - With default session options when merged options are empty.
+1. Loads defaults from `katt.json`.
+2. Resolves active runtime:
+   - `gh-copilot` or `codex`
+   - defaults to `gh-copilot` when `agent` is missing/unsupported.
+3. Resolves runtime options:
+   - merges `katt.json` `agentOptions` (base) with explicit `options`
+   - explicit `options` override matching keys
+   - `model` is normalized to a non-empty string only.
 4. Resolves prompt timeout:
    - `options.timeoutMs` (if valid positive number) has highest precedence.
    - `katt.json` `prompt.timeoutMs` (if valid positive number) is fallback.
-   - Default timeout is `600000` milliseconds.
-5. Sends `{ prompt: input }` and waits for completion using the resolved timeout.
-6. Returns `response.data.content` as a string.
-7. If the response has no content, throws:
-   - `Error("Copilot did not return a response.")`
+   - default timeout is `600000` milliseconds.
+5. Executes using selected runtime:
+   - `gh-copilot`:
+     1. creates a Copilot client with logged-in-user auth
+     2. starts the client lifecycle
+     3. creates a Copilot session with merged options
+     4. sends `{ prompt: input }` and waits with resolved timeout
+     5. returns `response.data.content`
+     6. throws `Error("Copilot did not return a response.")` if content missing
+   - `codex`:
+     1. runs `codex exec` non-interactively
+     2. passes supported options as command flags/config overrides
+     3. sends prompt through stdin
+     4. reads the last assistant message from output file (or stdout fallback)
+     5. returns response text
+     6. throws:
+        - `Error("Codex did not return a response.")` when no output is
+          available
+        - timeout/process errors when Codex fails to execute successfully.
 
 ### Cleanup guarantees for `prompt()`
 
-Cleanup runs in a `finally` block regardless of success/failure:
-
-1. Attempts to destroy the created session (if any).
-2. Attempts to stop the Copilot client.
-3. Aggregates cleanup failures from both steps.
-4. If one or more cleanup failures occur, logs:
-   - `Copilot cleanup encountered <N> error(s).`
+- `gh-copilot` cleanup runs in a `finally` block regardless of success/failure:
+  1. attempts to destroy the created session (if any)
+  2. attempts to stop the Copilot client
+  3. aggregates cleanup failures from both steps
+  4. if one or more cleanup failures occur, logs:
+     - `Copilot cleanup encountered <N> error(s).`
+- `codex` runtime always removes temporary output artifacts used for response
+  extraction.
 
 Cleanup logging does not replace the primary operation result/error.
 
 ### `promptFile()`
 
 1. Resolves `filePath`:
-   - Absolute path: used as-is.
-   - Relative path in eval-file context: resolved from the eval file directory.
-   - Relative path outside eval-file context: resolved from `process.cwd()`.
+   - absolute path: used as-is
+   - relative path in eval-file context: resolved from the eval file directory
+   - relative path outside eval-file context: resolved from `process.cwd()`
 2. Reads UTF-8 file content from the resolved path.
 3. Delegates to `prompt(content, options)` and returns its result.
 
@@ -75,8 +91,10 @@ Cleanup logging does not replace the primary operation result/error.
 
 - File read failures in `promptFile()` are propagated to the caller.
 - Copilot/session errors in `prompt()` are propagated to the caller.
-- Missing response content in `prompt()` is converted to the explicit error
-  defined above.
+- Codex process startup/exit/timeout errors in `prompt()` are propagated to the
+  caller.
+- Missing response content in `prompt()` is converted to the explicit runtime
+  errors defined above.
 
 ## Non-Goals
 
