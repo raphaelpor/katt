@@ -9,6 +9,7 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 
 - [Overview](#overview)
 - [API Documentation](#api-documentation)
+- [Articles](#articles)
 - [Hello World - Example](#hello-world---example)
 - [Main Features](#main-features)
 - [Usage](#usage)
@@ -33,6 +34,10 @@ Katt is designed to evaluate and validate the behavior of AI agents like **Claud
 ## API Documentation
 
 For a complete list of features and usage examples, see [docs/api-documentation.md](https://github.com/raphaelpor/katt/blob/main/docs/api-documentation.md).
+
+## Articles
+
+- [Introducing Katt](https://github.com/raphaelpor/katt/blob/main/docs/articles/introduction-to-katt.md)
 
 ## Hello World - Example
 
