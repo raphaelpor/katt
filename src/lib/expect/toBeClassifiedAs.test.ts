@@ -20,6 +20,7 @@ describe("toBeClassifiedAs", () => {
     clearFailedTests();
     await settlePendingTests();
     vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it("does not register a failure when score is greater than or equal to the threshold", async () => {
