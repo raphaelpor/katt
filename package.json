@@ -45,7 +45,7 @@
     "vscode-jsonrpc": "^8.2.1"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.1.21"
+    "@github/copilot-sdk": "0.1.21"
   },
   "bugs": {
     "url": "https://github.com/raphaelpor/katt/issues"
