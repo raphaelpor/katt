@@ -7,6 +7,7 @@ configuration loaded from `katt.json` or a user-provided path via CLI.
 
 Agent runtime configuration and prompt timeout defaults loaded from config are
 in scope.
+Eval discovery ignore patterns loaded from config are also in scope.
 
 ## File Location
 
@@ -22,8 +23,8 @@ No parent-directory search is performed.
 
 ## Supported Schema
 
-Top-level JSON object with optional `agent`, `agentOptions`, and `prompt`
-objects:
+Top-level JSON object with optional `agent`, `agentOptions`, `prompt`, and
+`ignorePatterns` keys:
 
 ```json
 {
@@ -34,7 +35,8 @@ objects:
   },
   "prompt": {
     "timeoutMs": 600000
-  }
+  },
+  "ignorePatterns": ["./src", "./test/*"]
 }
 ```
 
@@ -53,6 +55,9 @@ Supported keys:
     - unsupported keys are ignored by the Codex runner
 - `prompt?: object`
 - `prompt.timeoutMs?: number` (positive values only)
+- `ignorePatterns?: string[]`
+  - Glob patterns ignored when discovering eval files
+  - Relative patterns are resolved from the config file directory
 
 `agentOptions` are only read when `agent` is explicitly set to a supported
 value.
@@ -100,6 +105,18 @@ value.
    - Value is floored to an integer.
 7. Returns `undefined` for invalid/missing timeout values.
 
+`getIgnorePatterns()`:
+
+1. Resolves active config path (default `katt.json`, optional CLI override).
+2. Attempts to read resolved config file as UTF-8.
+3. If file is missing (`ENOENT`), returns `[]`.
+4. Parses JSON content.
+5. Reads `ignorePatterns` only when top-level config is a JSON object and
+   `ignorePatterns` is an array.
+6. Keeps only non-empty string patterns.
+7. Resolves each relative pattern from the config file directory.
+8. Returns `[]` when no valid patterns remain.
+
 ### Invalid data handling
 
 - Invalid JSON:
@@ -122,6 +139,9 @@ value.
 - Missing/non-number/non-positive/non-finite `prompt.timeoutMs`:
   - Treated as unset timeout
   - returns `undefined` timeout
+- Missing/non-array/invalid `ignorePatterns` entries:
+  - Treated as unset patterns
+  - invalid entries are ignored
 
 ## Session Option Precedence
 
