@@ -28,7 +28,9 @@ vi.mock("./codex.js", () => ({
   runCodexPrompt: (...args: unknown[]) => runCodexPromptMock(...args),
 }));
 
-let sendAndWaitMock: ReturnType<typeof vi.fn<() => Promise<{ data: { content: string } }>>>;
+let sendAndWaitMock: ReturnType<
+  typeof vi.fn<() => Promise<{ data: { content: string } }>>
+>;
 let destroyMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
 let startMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
 let stopMock: ReturnType<typeof vi.fn<() => Promise<Error[]>>>;
