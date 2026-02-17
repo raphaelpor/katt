@@ -12,6 +12,7 @@ import { evalFileStorage } from "../lib/context/evalFileContext.js";
 import { cyanBold } from "../lib/output/color.js";
 import { displayBanner } from "./banner.js";
 import { setSnapshotUpdateMode } from "../lib/expect/snapshotConfig.js";
+import { setKattConfigFilePath } from "../lib/config/config.js";
 
 function formatStartTime(startTime: Date): string {
   const hours = String(startTime.getHours()).padStart(2, "0");
@@ -29,18 +30,60 @@ function displayHelp(): void {
       "Options:",
       "  -h, --help              Show CLI usage information",
       "  -u, --update-snapshots  Update snapshot files on mismatch",
+      "      --config-file PATH  Use a custom config file instead of katt.json",
     ].join("\n"),
   );
 }
 
+type ParsedCliConfigFile = {
+  configFilePath?: string;
+  error?: string;
+};
+
+function parseConfigFilePath(args: string[]): ParsedCliConfigFile {
+  let configFilePath: string | undefined;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--config-file") {
+      const value = args[index + 1];
+      if (value === undefined || value.length === 0) {
+        return { error: "Missing value for --config-file." };
+      }
+      configFilePath = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--config-file=")) {
+      const value = arg.slice("--config-file=".length);
+      if (value.length === 0) {
+        return { error: "Missing value for --config-file." };
+      }
+      configFilePath = value;
+    }
+  }
+
+  return { configFilePath };
+}
+
 export async function runCli(): Promise<number> {
   const args = process.argv.slice(2);
+  setKattConfigFilePath(undefined);
   const shouldShowHelp = args.includes("--help") || args.includes("-h");
   if (shouldShowHelp) {
     displayBanner();
     displayHelp();
     return 0;
   }
+
+  const parsedConfigFile = parseConfigFilePath(args);
+  if (parsedConfigFile.error) {
+    displayBanner();
+    console.error(parsedConfigFile.error);
+    return 1;
+  }
+  setKattConfigFilePath(parsedConfigFile.configFilePath);
 
   const shouldUpdateSnapshots =
     args.includes("--update-snapshots") || args.includes("-u");

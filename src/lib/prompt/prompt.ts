@@ -8,27 +8,31 @@ import {
 } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
 import { getDefaultKattConfig } from "../config/config.js";
+import { runCodexPrompt } from "./codex.js";
 
 export const DEFAULT_PROMPT_TIMEOUT_MS = 600_000;
 
-export type PromptOptions = SessionConfig & {
-  timeoutMs?: number;
-};
+export type PromptOptions = SessionConfig &
+  Record<string, unknown> & {
+    timeoutMs?: number;
+  };
 
 function normalizeModel(model: string | undefined): string | undefined {
   return typeof model === "string" && model.length > 0 ? model : undefined;
 }
 
-function normalizeSessionConfig(
-  config: SessionConfig | undefined,
-): SessionConfig | undefined {
+function normalizeAgentConfig(
+  config: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
   if (!config) {
     return undefined;
   }
 
-  const normalized = { ...config } as SessionConfig;
+  const normalized = { ...config };
   if (normalized.model !== undefined) {
-    const model = normalizeModel(normalized.model);
+    const model = normalizeModel(
+      typeof normalized.model === "string" ? normalized.model : undefined,
+    );
     if (model) {
       normalized.model = model;
     } else {
@@ -76,11 +80,11 @@ export async function prompt(
 ): Promise<string> {
   const { timeoutMs: explicitTimeoutMsRaw, ...explicitSessionConfig } = options;
   const defaults = await getDefaultKattConfig();
-  const configOptions = normalizeSessionConfig(defaults.copilot);
-  const explicitOptions = normalizeSessionConfig(
-    explicitSessionConfig as SessionConfig,
+  const configOptions = normalizeAgentConfig(defaults.agentOptions);
+  const explicitOptions = normalizeAgentConfig(
+    explicitSessionConfig as Record<string, unknown>,
   );
-  const sessionOptions = normalizeSessionConfig({
+  const sessionOptions = normalizeAgentConfig({
     ...(configOptions ?? {}),
     ...(explicitOptions ?? {}),
   });
@@ -88,8 +92,22 @@ export async function prompt(
   const explicitTimeoutMs = normalizeTimeoutMs(explicitTimeoutMsRaw);
   const timeoutMs =
     explicitTimeoutMs ?? configuredTimeoutMs ?? DEFAULT_PROMPT_TIMEOUT_MS;
+  const model = normalizeModel(
+    typeof sessionOptions?.model === "string"
+      ? sessionOptions.model
+      : undefined,
+  );
 
-  const model = normalizeModel(sessionOptions?.model);
+  if (defaults.agent === "codex") {
+    const response = await runCodexPrompt(input, timeoutMs, sessionOptions);
+
+    if (model) {
+      setCurrentTestModel(model);
+    }
+
+    return response;
+  }
+
   const client = new CopilotClient({ useLoggedInUser: true });
   let session: CopilotSession | undefined;
   let unsubscribeUsage: (() => void) | undefined;
@@ -97,7 +115,7 @@ export async function prompt(
 
   try {
     await client.start();
-    session = await client.createSession(sessionOptions);
+    session = await client.createSession(sessionOptions as SessionConfig);
     unsubscribeUsage = session.on("assistant.usage", (event) => {
       usedTokens += getUsageTokens(event.data);
     });

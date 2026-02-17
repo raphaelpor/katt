@@ -1,5 +1,6 @@
 {
-  "copilot": {
+  "agent": "gh-copilot",
+  "agentOptions": {
     "model": "gpt-5-mini"
   }
 }
