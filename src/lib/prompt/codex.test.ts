@@ -56,7 +56,7 @@ function createMockChildProcess(): MockChildProcess {
       eventHandlers[event].push(handler);
     },
     kill: vi.fn(),
-    _trigger: (event: string, ...args: unknown[]) => {
+    triggerEvent: (event: string, ...args: unknown[]) => {
       if (eventHandlers[event]) {
         for (const handler of eventHandlers[event]) {
           handler(...args);
@@ -100,9 +100,9 @@ function setupSuccessfulCodex(
     }
     (
       mockChild as unknown as {
-        _trigger: (event: string, ...args: unknown[]) => void;
+        triggerEvent: (event: string, ...args: unknown[]) => void;
       }
-    )._trigger("close", exitCode, null);
+    ).triggerEvent("close", exitCode, null);
   }, 0);
 
   return mockChild;
@@ -331,6 +331,28 @@ describe("runCodexPrompt", () => {
     expect(args).not.toContain("--config");
   });
 
+  it("ignores config when it is an object", async () => {
+    setupSuccessfulCodex("response");
+
+    await runCodexPrompt("test prompt", 30000, {
+      config: { key: "value" } as unknown as string,
+    });
+
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).not.toContain("--config");
+  });
+
+  it("ignores config when it is null or undefined", async () => {
+    setupSuccessfulCodex("response");
+
+    await runCodexPrompt("test prompt", 30000, {
+      config: null as unknown as string,
+    });
+
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).not.toContain("--config");
+  });
+
   it("uses custom working directory when provided", async () => {
     setupSuccessfulCodex("response");
 
@@ -363,9 +385,9 @@ describe("runCodexPrompt", () => {
     setTimeout(() => {
       (
         mockChild as unknown as {
-          _trigger: (event: string, ...args: unknown[]) => void;
+          triggerEvent: (event: string, ...args: unknown[]) => void;
         }
-      )._trigger("error", new Error("ENOENT: codex not found"));
+      ).triggerEvent("error", new Error("ENOENT: codex not found"));
     }, 0);
 
     await expect(
@@ -386,9 +408,9 @@ describe("runCodexPrompt", () => {
       // After kill is called, trigger close
       (
         mockChild as unknown as {
-          _trigger: (event: string, ...args: unknown[]) => void;
+          triggerEvent: (event: string, ...args: unknown[]) => void;
         }
-      )._trigger("close", null, "SIGTERM");
+      ).triggerEvent("close", null, "SIGTERM");
     }, 50);
 
     const promise = runCodexPrompt("test prompt", 10, undefined);
@@ -427,9 +449,9 @@ describe("runCodexPrompt", () => {
     setTimeout(() => {
       (
         mockChild as unknown as {
-          _trigger: (event: string, ...args: unknown[]) => void;
+          triggerEvent: (event: string, ...args: unknown[]) => void;
         }
-      )._trigger("close", null, "SIGKILL");
+      ).triggerEvent("close", null, "SIGKILL");
     }, 0);
 
     await expect(
@@ -448,9 +470,9 @@ describe("runCodexPrompt", () => {
     setTimeout(() => {
       (
         mockChild as unknown as {
-          _trigger: (event: string, ...args: unknown[]) => void;
+          triggerEvent: (event: string, ...args: unknown[]) => void;
         }
-      )._trigger("close", 0, null);
+      ).triggerEvent("close", 0, null);
     }, 0);
 
     await expect(
