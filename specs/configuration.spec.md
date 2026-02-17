@@ -113,6 +113,9 @@ value.
 - Unsupported `agent` values:
   - Runtime defaults to `gh-copilot`
   - `agentOptions` from file are not applied
+- Deprecated `copilot` top-level key:
+  - ignored
+  - logs warning instructing migration to `agent` and `agentOptions`
 - Missing/empty/non-string `agentOptions.model`:
   - `model` is not forwarded
   - other valid `agentOptions` keys still apply

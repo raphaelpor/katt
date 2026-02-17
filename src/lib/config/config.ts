@@ -7,6 +7,7 @@ export type KattAgent = "gh-copilot" | "codex";
 type KattConfig = {
   agent?: unknown;
   agentOptions?: unknown;
+  copilot?: unknown;
   prompt?: unknown;
 };
 
@@ -76,12 +77,29 @@ function parseKattConfig(
   }
 }
 
+function warnDeprecatedConfigProperties(
+  config: KattConfig | undefined,
+  configFileLabel: string,
+): void {
+  if (!config) {
+    return;
+  }
+
+  if ("copilot" in config) {
+    console.warn(
+      `Deprecated config property "copilot" found in ${configFileLabel}. Use "agent" and "agentOptions" instead.`,
+    );
+  }
+}
+
 async function readKattConfig(): Promise<KattConfig | undefined> {
   const { resolvedPath, label } = getConfigPathDetails();
 
   try {
     const content = await readFile(resolvedPath, "utf8");
-    return parseKattConfig(content, label);
+    const config = parseKattConfig(content, label);
+    warnDeprecatedConfigProperties(config, label);
+    return config;
   } catch (error) {
     if (isNodeErrorWithCode(error, "ENOENT")) {
       return undefined;

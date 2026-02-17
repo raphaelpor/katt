@@ -330,4 +330,19 @@ describe("getDefaultKattConfig", () => {
       expect.stringContaining("Failed to read ./config/custom-katt.json:"),
     );
   });
+
+  it("warns when deprecated copilot config is used", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        copilot: { model: "gpt-5.2" },
+      }),
+    );
+    const warningSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await getDefaultKattConfig();
+
+    expect(warningSpy).toHaveBeenCalledWith(
+      'Deprecated config property "copilot" found in katt.json. Use "agent" and "agentOptions" instead.',
+    );
+  });
 });
