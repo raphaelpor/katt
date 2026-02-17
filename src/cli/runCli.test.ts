@@ -13,6 +13,7 @@ const {
   mockDisplayBanner,
   mockSetSnapshotUpdateMode,
   mockSetKattConfigFilePath,
+  mockGetIgnorePatterns,
 } = vi.hoisted(() => ({
   mockFindEvalFiles: vi.fn(),
   mockClearFailedTests: vi.fn(),
@@ -26,6 +27,7 @@ const {
   mockDisplayBanner: vi.fn(),
   mockSetSnapshotUpdateMode: vi.fn(),
   mockSetKattConfigFilePath: vi.fn(),
+  mockGetIgnorePatterns: vi.fn(),
 }));
 
 vi.mock("./findEvalFiles.js", () => ({
@@ -60,6 +62,7 @@ vi.mock("../lib/expect/snapshotConfig.js", () => ({
 
 vi.mock("../lib/config/config.js", () => ({
   setKattConfigFilePath: mockSetKattConfigFilePath,
+  getIgnorePatterns: mockGetIgnorePatterns,
 }));
 
 vi.mock("./banner.js", () => ({
@@ -85,10 +88,12 @@ describe("runCli", () => {
     mockDisplayBanner.mockReset();
     mockSetSnapshotUpdateMode.mockReset();
     mockSetKattConfigFilePath.mockReset();
+    mockGetIgnorePatterns.mockReset();
 
     mockGetFailedTests.mockReturnValue([]);
     mockGetTotalTests.mockReturnValue(0);
     mockSettlePendingTests.mockResolvedValue([]);
+    mockGetIgnorePatterns.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -109,6 +114,7 @@ describe("runCli", () => {
     expect(mockClearFailedTests).toHaveBeenCalledTimes(1);
     expect(mockClearTotalTests).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(false);
     expect(logSpy).toHaveBeenCalledWith("No .eval.js or .eval.ts files found.");
   });
@@ -175,6 +181,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(true);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(logSpy).toHaveBeenCalled();
   });
 
@@ -193,6 +200,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
   });
 
   it("uses custom config file from --config-file=<path>", async () => {
@@ -210,6 +218,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
   });
 
   it("returns 1 when --config-file is provided without value", async () => {
@@ -243,6 +252,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing /tmp/a.eval.ts: Error: boom"),
     );
@@ -265,6 +275,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing async test: Error: async boom"),
     );
@@ -288,6 +299,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith("❌ Failed tests:");
     expect(errorSpy).toHaveBeenCalledWith(
       "1. suite > nested > case: expected x to include y",
@@ -306,6 +318,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(mockEvalFileRun).toHaveBeenCalledTimes(2);
     expect(mockEvalFileRun).toHaveBeenNthCalledWith(
       1,
@@ -318,5 +331,18 @@ describe("runCli", () => {
     expect(summary).toContain("[Evals]  3 passed");
     expect(summary).toMatch(/\[Start at\]\s+\d{2}:\d{2}:\d{2}/);
     expect(summary).toContain("[Duration]");
+  });
+
+  it("passes config ignore patterns to eval file discovery", async () => {
+    mockGetIgnorePatterns.mockResolvedValue(["/tmp/ignore/**"]);
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+
+    const exitCode = await runCli();
+
+    expect(exitCode).toBe(0);
+    expect(mockFindEvalFiles).toHaveBeenCalledWith(process.cwd(), [
+      "/tmp/ignore/**",
+    ]);
   });
 });

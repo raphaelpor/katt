@@ -48,4 +48,43 @@ describe("findEvalFiles", () => {
 
     expect(files).toEqual([rootEval]);
   });
+
+  it("skips files and directories that match ignore patterns", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "katt-find-eval-patterns-"));
+    const ignoredDir = join(tempDir, "ignored");
+    const includedDir = join(tempDir, "included");
+    const ignoredDirEval = join(ignoredDir, "hidden.eval.ts");
+    const ignoredFileEval = join(tempDir, "skip.eval.js");
+    const includedEval = join(includedDir, "keep.eval.ts");
+
+    await mkdir(ignoredDir, { recursive: true });
+    await mkdir(includedDir, { recursive: true });
+    await writeFile(ignoredDirEval, 'console.log("ignored-dir")', "utf8");
+    await writeFile(ignoredFileEval, 'console.log("ignored-file")', "utf8");
+    await writeFile(includedEval, 'console.log("included")', "utf8");
+
+    const files = await findEvalFiles(tempDir, [
+      join(tempDir, "ignored"),
+      join(tempDir, "skip.eval.js"),
+    ]);
+
+    expect(files).toEqual([includedEval]);
+  });
+
+  it("supports glob ignore patterns", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "katt-find-eval-glob-"));
+    const nestedDir = join(tempDir, "nested");
+    const skippedEval = join(nestedDir, "skip.eval.ts");
+    const keptEval = join(nestedDir, "keep.eval.ts");
+
+    await mkdir(nestedDir, { recursive: true });
+    await writeFile(skippedEval, 'console.log("skip")', "utf8");
+    await writeFile(keptEval, 'console.log("keep")', "utf8");
+
+    const files = await findEvalFiles(tempDir, [
+      join(tempDir, "**/skip.eval.ts"),
+    ]);
+
+    expect(files).toEqual([keptEval]);
+  });
 });

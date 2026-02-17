@@ -12,7 +12,10 @@ import { evalFileStorage } from "../lib/context/evalFileContext.js";
 import { cyanBold } from "../lib/output/color.js";
 import { displayBanner } from "./banner.js";
 import { setSnapshotUpdateMode } from "../lib/expect/snapshotConfig.js";
-import { setKattConfigFilePath } from "../lib/config/config.js";
+import {
+  getIgnorePatterns,
+  setKattConfigFilePath,
+} from "../lib/config/config.js";
 
 function formatStartTime(startTime: Date): string {
   const hours = String(startTime.getHours()).padStart(2, "0");
@@ -94,7 +97,8 @@ export async function runCli(): Promise<number> {
   resetTestLoggingState();
   clearFailedTests();
   clearTotalTests();
-  const evalFiles = await findEvalFiles(process.cwd());
+  const ignorePatterns = await getIgnorePatterns();
+  const evalFiles = await findEvalFiles(process.cwd(), ignorePatterns);
 
   if (evalFiles.length === 0) {
     console.log("No .eval.js or .eval.ts files found.");

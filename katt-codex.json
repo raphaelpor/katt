@@ -1,3 +1,4 @@
 {
-  "agent": "codex"
+  "agent": "codex",
+  "ignorePatterns": ["./examples/**"]
 }

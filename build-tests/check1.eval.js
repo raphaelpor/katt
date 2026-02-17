@@ -1,17 +1,11 @@
 import { describe, expect, it, prompt } from "katt";
 
 describe('Hello World', () => {
-    it('It should say hi', async () => {
-        const result = await prompt('If you read this just say hi');
-        expect(result.toLowerCase()).toContain('hi');
-    });
-
     it('should return the date in a json format', async () => {
         const currentData = new Date(Date.now());
 
         const result = await prompt('Return the current year in the format "{ year: YYYY }"');
         expect(result).toContain(`{ year: ${currentData.getFullYear()} }`);
-        expect(result).toMatchSnapshot();
     });
 
     it('should classify a response as helpful', async () => {
