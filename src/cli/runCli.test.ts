@@ -12,6 +12,7 @@ const {
   mockCyanBold,
   mockDisplayBanner,
   mockSetSnapshotUpdateMode,
+  mockSetKattConfigFilePath,
 } = vi.hoisted(() => ({
   mockFindEvalFiles: vi.fn(),
   mockClearFailedTests: vi.fn(),
@@ -24,6 +25,7 @@ const {
   mockCyanBold: vi.fn((value: string) => `[${value}]`),
   mockDisplayBanner: vi.fn(),
   mockSetSnapshotUpdateMode: vi.fn(),
+  mockSetKattConfigFilePath: vi.fn(),
 }));
 
 vi.mock("./findEvalFiles.js", () => ({
@@ -56,6 +58,10 @@ vi.mock("../lib/expect/snapshotConfig.js", () => ({
   setSnapshotUpdateMode: mockSetSnapshotUpdateMode,
 }));
 
+vi.mock("../lib/config/config.js", () => ({
+  setKattConfigFilePath: mockSetKattConfigFilePath,
+}));
+
 vi.mock("./banner.js", () => ({
   displayBanner: mockDisplayBanner,
 }));
@@ -78,6 +84,7 @@ describe("runCli", () => {
     mockCyanBold.mockClear();
     mockDisplayBanner.mockReset();
     mockSetSnapshotUpdateMode.mockReset();
+    mockSetKattConfigFilePath.mockReset();
 
     mockGetFailedTests.mockReturnValue([]);
     mockGetTotalTests.mockReturnValue(0);
@@ -101,6 +108,7 @@ describe("runCli", () => {
     expect(mockResetTestLoggingState).toHaveBeenCalledTimes(1);
     expect(mockClearFailedTests).toHaveBeenCalledTimes(1);
     expect(mockClearTotalTests).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(false);
     expect(logSpy).toHaveBeenCalledWith("No .eval.js or .eval.ts files found.");
   });
@@ -120,9 +128,13 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockFindEvalFiles).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("-h, --help"));
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("--config-file PATH"),
+    );
   });
 
   it("returns 0 and prints help when -h is passed", async () => {
@@ -140,6 +152,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockFindEvalFiles).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
   });
@@ -161,7 +174,62 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(true);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(logSpy).toHaveBeenCalled();
+  });
+
+  it("uses custom config file from --config-file", async () => {
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+    const originalArgv = process.argv;
+    let exitCode = 1;
+
+    try {
+      process.argv = ["node", "katt", "--config-file", "./custom.json"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
+  });
+
+  it("uses custom config file from --config-file=<path>", async () => {
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+    const originalArgv = process.argv;
+    let exitCode = 1;
+
+    try {
+      process.argv = ["node", "katt", "--config-file=./custom.json"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
+  });
+
+  it("returns 1 when --config-file is provided without value", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const originalArgv = process.argv;
+    let exitCode = 0;
+
+    try {
+      process.argv = ["node", "katt", "--config-file"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
+    expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockFindEvalFiles).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith("Missing value for --config-file.");
   });
 
   it("returns 1 when an eval file execution fails", async () => {
@@ -174,6 +242,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing /tmp/a.eval.ts: Error: boom"),
     );
@@ -195,6 +264,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing async test: Error: async boom"),
     );
@@ -217,6 +287,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(1);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(errorSpy).toHaveBeenCalledWith("❌ Failed tests:");
     expect(errorSpy).toHaveBeenCalledWith(
       "1. suite > nested > case: expected x to include y",
@@ -234,6 +305,7 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
+    expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockEvalFileRun).toHaveBeenCalledTimes(2);
     expect(mockEvalFileRun).toHaveBeenNthCalledWith(
       1,

@@ -31,9 +31,9 @@ This document lists the currently available Katt features and how to use them.
 - Snapshot matcher: `toMatchSnapshot`
 - AI-based matcher: `promptCheck`
 - AI-based classification matcher: `toBeClassifiedAs`
-- Prompt execution with optional Copilot session option overrides
+- Prompt execution with provider-specific runtime options
 - Prompt loading from files with relative-path resolution
-- Default Copilot session configuration via `katt.json`
+- Default runtime configuration via `katt.json` (or `--config-file`) for `gh-copilot`/`codex`
 - Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
@@ -146,14 +146,23 @@ await expect(result).toBeClassifiedAs("helpful", {
 Sends `input` to the AI model and returns the response string.
 
 `options`:
-- Any Copilot session option (for example: `model`, `reasoningEffort`,
-  `streaming`)
-- `timeoutMs?: number` to control how long to wait for `session.idle`
-- Explicit options override matching keys from `katt.json`
+- For `gh-copilot`: any Copilot session option (for example: `model`,
+  `reasoningEffort`, `streaming`)
+- For `codex`: Codex exec options:
+  - `model?: string`
+  - `profile?: string`
+  - `sandbox?: string`
+  - `fullAuto?: boolean`
+  - `skipGitRepoCheck?: boolean`
+  - `dangerouslyBypassApprovalsAndSandbox?: boolean`
+  - `config?: string | string[]` (forwarded as `codex exec --config`)
+  - `workingDirectory?: string`
+- `timeoutMs?: number` to control how long to wait for prompt completion
+- Explicit options override matching keys from config `agentOptions`
 
 Timeout precedence:
 - `options.timeoutMs` (when valid and positive)
-- `katt.json` `prompt.timeoutMs` (when valid and positive)
+- Config `prompt.timeoutMs` (when valid and positive)
 - Built-in default: `600000` ms
 
 ```ts
@@ -179,11 +188,12 @@ expect(result).toContain("expected phrase");
 
 ### `katt.json`
 
-Set default Copilot session options:
+Set runtime defaults:
 
 ```json
 {
-  "copilot": {
+  "agent": "gh-copilot",
+  "agentOptions": {
     "model": "gpt-5-mini",
     "reasoningEffort": "high",
     "streaming": true
@@ -194,9 +204,32 @@ Set default Copilot session options:
 }
 ```
 
+Or use Codex:
+
+```json
+{
+  "agent": "codex",
+  "agentOptions": {
+    "model": "gpt-5-codex",
+    "profile": "default",
+    "sandbox": "workspace-write"
+  },
+  "prompt": {
+    "timeoutMs": 240000
+  }
+}
+```
+
 Behavior:
-- `prompt("...")` and `promptFile("...")` use `copilot` values as default
-  session options
+- Supported agents:
+  - `gh-copilot` (default when `agent` is missing or unsupported)
+  - `codex`
+- Default config location is `<cwd>/katt.json`
+- CLI override: `--config-file <path>` or `--config-file=<path>`
+  - Relative paths are resolved from `process.cwd()`
+  - Absolute paths are used as-is
+- `prompt("...")` and `promptFile("...")` use `agentOptions` as default
+  options for the selected agent runtime
 - Passing `options` to `prompt`/`promptFile` overrides matching keys from config
 - `prompt.timeoutMs` sets the default wait timeout for prompt completion
 
@@ -206,6 +239,8 @@ Behavior:
 
 - `-h`, `--help`: prints usage and option information, then exits with code `0`
 - `-u`, `--update-snapshots`: updates snapshot files on mismatch
+- `--config-file <path>`: use a custom config file instead of `<cwd>/katt.json`
+  - Missing value causes exit code `1`
 
 ### Eval file discovery
 
