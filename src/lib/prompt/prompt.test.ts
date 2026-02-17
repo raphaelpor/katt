@@ -28,13 +28,28 @@ vi.mock("./codex.js", () => ({
   runCodexPrompt: (...args: unknown[]) => runCodexPromptMock(...args),
 }));
 
-let sendAndWaitMock: ReturnType<typeof vi.fn>;
-let destroyMock: ReturnType<typeof vi.fn>;
-let startMock: ReturnType<typeof vi.fn>;
-let stopMock: ReturnType<typeof vi.fn>;
-let createSessionMock: ReturnType<typeof vi.fn>;
-let onMock: ReturnType<typeof vi.fn>;
-let unsubscribeMock: ReturnType<typeof vi.fn>;
+let sendAndWaitMock: ReturnType<typeof vi.fn<() => Promise<{ data: { content: string } }>>>;
+let destroyMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
+let startMock: ReturnType<typeof vi.fn<() => Promise<void>>>;
+let stopMock: ReturnType<typeof vi.fn<() => Promise<Error[]>>>;
+let createSessionMock: ReturnType<
+  typeof vi.fn<
+    (...args: unknown[]) => Promise<{
+      on: typeof onMock;
+      sendAndWait: typeof sendAndWaitMock;
+      destroy: typeof destroyMock;
+    }>
+  >
+>;
+let onMock: ReturnType<
+  typeof vi.fn<
+    (
+      eventType: string,
+      handler: (event: { data: UsageData }) => void,
+    ) => typeof unsubscribeMock
+  >
+>;
+let unsubscribeMock: ReturnType<typeof vi.fn<() => void>>;
 
 type UsageData = {
   inputTokens?: number;
