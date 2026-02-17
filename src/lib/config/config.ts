@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import type { SessionConfig } from "@github/copilot-sdk";
 
 export type KattAgent = "gh-copilot" | "codex";
@@ -9,6 +9,7 @@ type KattConfig = {
   agentOptions?: unknown;
   copilot?: unknown;
   prompt?: unknown;
+  ignorePatterns?: unknown;
 };
 
 export type KattDefaults = {
@@ -169,6 +170,19 @@ function readPromptTimeoutMs(
   return normalizeTimeoutMs((prompt as Record<string, unknown>).timeoutMs);
 }
 
+function readIgnorePatterns(config: KattConfig | undefined): string[] {
+  if (!config || !Array.isArray(config.ignorePatterns)) {
+    return [];
+  }
+
+  const configDirectory = dirname(getConfigPathDetails().resolvedPath);
+  return config.ignorePatterns
+    .filter((pattern): pattern is string => {
+      return typeof pattern === "string" && pattern.length > 0;
+    })
+    .map((pattern) => resolve(configDirectory, pattern));
+}
+
 export async function getDefaultKattConfig(): Promise<KattDefaults> {
   const config = await readKattConfig();
   const agent = readSupportedAgent(config?.agent) ?? DEFAULT_AGENT;
@@ -194,6 +208,11 @@ export async function getDefaultCopilotConfig(): Promise<
 export async function getDefaultPromptTimeoutMs(): Promise<number | undefined> {
   const config = await getDefaultKattConfig();
   return config.promptTimeoutMs;
+}
+
+export async function getIgnorePatterns(): Promise<string[]> {
+  const config = await readKattConfig();
+  return readIgnorePatterns(config);
 }
 
 export async function getDefaultCopilotModel(): Promise<string | undefined> {

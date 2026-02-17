@@ -200,7 +200,8 @@ Set runtime defaults:
   },
   "prompt": {
     "timeoutMs": 240000
-  }
+  },
+  "ignorePatterns": ["./src", "./tests/*"]
 }
 ```
 
@@ -232,6 +233,9 @@ Behavior:
   options for the selected agent runtime
 - Passing `options` to `prompt`/`promptFile` overrides matching keys from config
 - `prompt.timeoutMs` sets the default wait timeout for prompt completion
+- `ignorePatterns` can exclude files/directories from eval discovery
+  - Accepts an array of glob patterns
+  - Relative patterns are resolved from the config file directory
 
 ## CLI Behavior
 
@@ -246,6 +250,7 @@ Behavior:
 
 - Recursively finds `*.eval.js` and `*.eval.ts` from current working directory
 - Skips `.git` and `node_modules`
+- Applies `ignorePatterns` from config before loading eval files
 
 ### Execution and results
 

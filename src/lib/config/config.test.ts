@@ -4,6 +4,7 @@ import {
   getDefaultCopilotConfig,
   getDefaultCopilotModel,
   getDefaultKattConfig,
+  getIgnorePatterns,
   getDefaultPromptTimeoutMs,
   setKattConfigFilePath,
 } from "./config.js";
@@ -344,5 +345,79 @@ describe("getDefaultKattConfig", () => {
     expect(warningSpy).toHaveBeenCalledWith(
       'Deprecated config property "copilot" found in katt.json. Use "agent" and "agentOptions" instead.',
     );
+  });
+});
+
+describe("getIgnorePatterns", () => {
+  afterEach(() => {
+    readFileMock.mockReset();
+    setKattConfigFilePath(undefined);
+    vi.restoreAllMocks();
+  });
+
+  it("returns an empty array when katt.json does not exist", async () => {
+    const missingFileError = Object.assign(new Error("missing"), {
+      code: "ENOENT",
+    });
+    readFileMock.mockRejectedValue(missingFileError);
+
+    const result = await getIgnorePatterns();
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns resolved ignore patterns from default config", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        ignorePatterns: ["./src", "./tests/*"],
+      }),
+    );
+
+    const result = await getIgnorePatterns();
+
+    expect(result).toEqual([
+      resolve(process.cwd(), "./src"),
+      resolve(process.cwd(), "./tests/*"),
+    ]);
+  });
+
+  it("resolves relative patterns from custom config file directory", async () => {
+    setKattConfigFilePath("./config/custom-katt.json");
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        ignorePatterns: ["./src", "../shared/*"],
+      }),
+    );
+
+    const result = await getIgnorePatterns();
+
+    expect(result).toEqual([
+      resolve(process.cwd(), "./config/src"),
+      resolve(process.cwd(), "./shared/*"),
+    ]);
+  });
+
+  it("ignores invalid ignore patterns entries", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        ignorePatterns: ["./src", "", 123, null],
+      }),
+    );
+
+    const result = await getIgnorePatterns();
+
+    expect(result).toEqual([resolve(process.cwd(), "./src")]);
+  });
+
+  it("returns an empty array for non-array ignorePatterns", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        ignorePatterns: "./src",
+      }),
+    );
+
+    const result = await getIgnorePatterns();
+
+    expect(result).toEqual([]);
   });
 });

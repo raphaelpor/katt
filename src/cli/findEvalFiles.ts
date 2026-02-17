@@ -1,10 +1,19 @@
 import { readdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { matchesGlob, resolve } from "node:path";
 
 const evalFileRegex = /\.eval\.(js|ts)$/;
 const ignoredDirs = new Set([".git", "node_modules"]);
 
-export async function findEvalFiles(dir: string): Promise<string[]> {
+function shouldIgnorePath(path: string, ignorePatterns: string[]): boolean {
+  return ignorePatterns.some((pattern) => {
+    return path === pattern || matchesGlob(path, pattern);
+  });
+}
+
+export async function findEvalFiles(
+  dir: string,
+  ignorePatterns: string[] = [],
+): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
 
@@ -15,11 +24,18 @@ export async function findEvalFiles(dir: string): Promise<string[]> {
         if (ignoredDirs.has(entry.name)) {
           return;
         }
-        files.push(...(await findEvalFiles(fullPath)));
+        if (shouldIgnorePath(fullPath, ignorePatterns)) {
+          return;
+        }
+        files.push(...(await findEvalFiles(fullPath, ignorePatterns)));
         return;
       }
 
-      if (entry.isFile() && evalFileRegex.test(entry.name)) {
+      if (
+        entry.isFile() &&
+        evalFileRegex.test(entry.name) &&
+        !shouldIgnorePath(fullPath, ignorePatterns)
+      ) {
         files.push(fullPath);
       }
     }),
