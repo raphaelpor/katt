@@ -29,7 +29,8 @@
     "format": "biome format --write ./src",
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:build": "node ./dist/katt.js"
+    "test:build": "node ./dist/katt.js",
+    "test:build:codex": "node ./dist/katt.js --config-file=./katt-codex.json"
   },
   "types": "dist/index.d.ts",
   "devDependencies": {

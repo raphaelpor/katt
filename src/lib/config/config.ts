@@ -2,15 +2,52 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { SessionConfig } from "@github/copilot-sdk";
 
+export type KattAgent = "gh-copilot" | "codex";
+
 type KattConfig = {
+  agent?: unknown;
+  agentOptions?: unknown;
   copilot?: unknown;
   prompt?: unknown;
 };
 
 export type KattDefaults = {
-  copilot?: SessionConfig;
+  agent: KattAgent;
+  agentOptions?: Record<string, unknown>;
   promptTimeoutMs?: number;
 };
+
+const DEFAULT_AGENT: KattAgent = "gh-copilot";
+const DEFAULT_CONFIG_FILE_NAME = "katt.json";
+let configuredConfigFilePath: string | undefined;
+
+type ConfigPathDetails = {
+  resolvedPath: string;
+  label: string;
+};
+
+function getConfigPathDetails(): ConfigPathDetails {
+  if (
+    typeof configuredConfigFilePath === "string" &&
+    configuredConfigFilePath.length > 0
+  ) {
+    return {
+      resolvedPath: resolve(process.cwd(), configuredConfigFilePath),
+      label: configuredConfigFilePath,
+    };
+  }
+
+  return {
+    resolvedPath: resolve(process.cwd(), DEFAULT_CONFIG_FILE_NAME),
+    label: DEFAULT_CONFIG_FILE_NAME,
+  };
+}
+
+export function setKattConfigFilePath(
+  configFilePath: string | undefined,
+): void {
+  configuredConfigFilePath = configFilePath;
+}
 
 function isNodeErrorWithCode(
   value: unknown,
@@ -24,7 +61,10 @@ function isNodeErrorWithCode(
   );
 }
 
-function parseKattConfig(content: string): KattConfig | undefined {
+function parseKattConfig(
+  content: string,
+  configFileLabel: string,
+): KattConfig | undefined {
   try {
     const parsed = JSON.parse(content);
     if (typeof parsed === "object" && parsed !== null) {
@@ -32,43 +72,74 @@ function parseKattConfig(content: string): KattConfig | undefined {
     }
     return undefined;
   } catch (error) {
-    console.warn(`Failed to parse katt.json: ${String(error)}`);
+    console.warn(`Failed to parse ${configFileLabel}: ${String(error)}`);
     return undefined;
   }
 }
 
+function warnDeprecatedConfigProperties(
+  config: KattConfig | undefined,
+  configFileLabel: string,
+): void {
+  if (!config) {
+    return;
+  }
+
+  if ("copilot" in config) {
+    console.warn(
+      `Deprecated config property "copilot" found in ${configFileLabel}. Use "agent" and "agentOptions" instead.`,
+    );
+  }
+}
+
 async function readKattConfig(): Promise<KattConfig | undefined> {
-  const configPath = resolve(process.cwd(), "katt.json");
+  const { resolvedPath, label } = getConfigPathDetails();
 
   try {
-    const content = await readFile(configPath, "utf8");
-    return parseKattConfig(content);
+    const content = await readFile(resolvedPath, "utf8");
+    const config = parseKattConfig(content, label);
+    warnDeprecatedConfigProperties(config, label);
+    return config;
   } catch (error) {
     if (isNodeErrorWithCode(error, "ENOENT")) {
       return undefined;
     }
 
-    console.warn(`Failed to read katt.json: ${String(error)}`);
+    console.warn(`Failed to read ${label}: ${String(error)}`);
     return undefined;
   }
 }
 
-function readCopilotConfig(
+function readSupportedAgent(agent: unknown): KattAgent | undefined {
+  if (agent === "gh-copilot" || agent === "codex") {
+    return agent;
+  }
+
+  return undefined;
+}
+
+function readAgentConfig(
   config: KattConfig | undefined,
-): SessionConfig | undefined {
-  const copilot = config?.copilot;
+  agent: KattAgent,
+): Record<string, unknown> | undefined {
+  if (!config) {
+    return undefined;
+  }
+
+  if (readSupportedAgent(config?.agent) !== agent) {
+    return undefined;
+  }
+
+  const agentOptions = config.agentOptions;
   if (
-    typeof copilot !== "object" ||
-    copilot === null ||
-    Array.isArray(copilot)
+    typeof agentOptions !== "object" ||
+    agentOptions === null ||
+    Array.isArray(agentOptions)
   ) {
     return undefined;
   }
 
-  const sessionConfig = {
-    ...(copilot as Record<string, unknown>),
-  } as SessionConfig;
-
+  const sessionConfig = { ...(agentOptions as Record<string, unknown>) };
   const model = sessionConfig.model;
   if (typeof model !== "string" || model.length === 0) {
     delete sessionConfig.model;
@@ -100,8 +171,11 @@ function readPromptTimeoutMs(
 
 export async function getDefaultKattConfig(): Promise<KattDefaults> {
   const config = await readKattConfig();
+  const agent = readSupportedAgent(config?.agent) ?? DEFAULT_AGENT;
+
   return {
-    copilot: readCopilotConfig(config),
+    agent,
+    agentOptions: readAgentConfig(config, agent),
     promptTimeoutMs: readPromptTimeoutMs(config),
   };
 }
@@ -110,7 +184,11 @@ export async function getDefaultCopilotConfig(): Promise<
   SessionConfig | undefined
 > {
   const config = await getDefaultKattConfig();
-  return config.copilot;
+  if (config.agent !== "gh-copilot") {
+    return undefined;
+  }
+
+  return config.agentOptions as SessionConfig | undefined;
 }
 
 export async function getDefaultPromptTimeoutMs(): Promise<number | undefined> {
