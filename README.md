@@ -12,16 +12,10 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 - [Articles](#articles)
 - [Hello World - Example](#hello-world---example)
 - [Main Features](#main-features)
-- [Usage](#usage)
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
-- [Using promptFile](#using-promptfile)
 - [Specifying AI Models](#specifying-ai-models)
 - [Development](#development)
-- [Setup](#setup)
-- [Available Scripts](#available-scripts)
-- [Verification Process](#verification-process)
-- [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
 - [Requirements](#requirements)
 - [License](#license)
@@ -29,7 +23,8 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 
 ## Overview
 
-Run your own benchmarks and evaluations: **Katt** is designed to evaluate and validate the behavior of AI agents like **Claude Code**, **GitHub Copilot**, **OpenAI Codex** and more. It provides a simple, intuitive API for writing tests that interact with AI models and assert their responses.
+#### ✨ Run your own benchmarks and evaluations ✨
+**Katt** is designed to evaluate and validate the behavior of AI agents like **Claude Code**, **GitHub Copilot**, **OpenAI Codex** and more. It provides a simple, intuitive API for writing tests that interact with AI models and assert their responses.
 
 ## API Documentation
 
