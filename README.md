@@ -12,6 +12,7 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 - [Articles](#articles)
 - [Hello World - Example](#hello-world---example)
 - [Main Features](#main-features)
+- [Support](#support)
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
 - [Specifying AI Models](#specifying-ai-models)
@@ -65,6 +66,16 @@ describe("Greeting agent", () => {
 - **Model Selection**: Support for specifying custom AI models
 - **Runtime Selection**: Run prompts through GitHub Copilot (default) or Codex
 - **Configurable Timeouts**: Override prompt wait time per test or via `katt.json`
+
+## Support
+
+| Category | Supported |
+|----------|-----------|
+| **Node.js** | v24+ |
+| **Package Manager** | npm |
+| **Platform** | Linux, macOS, Windows |
+| **AI Runtimes** | GitHub Copilot (default), Codex |
+| **Installation** | Global (`npm install -g katt`) or npx |
 
 ## Usage
 
