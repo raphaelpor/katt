@@ -6,10 +6,10 @@ import {
 } from "../context/context.js";
 import { cyanBold } from "./color.js";
 
-let lastLoggedSuite = "";
+const loggedSuites = new Set<string>();
 
 export function resetTestLoggingState(): void {
-  lastLoggedSuite = "";
+  loggedSuites.clear();
 }
 
 type TestLogOptions = {
@@ -32,9 +32,9 @@ export function logTestExecution({
   const suiteLabel = suitePath.length > 0 ? suitePath : "(root)";
   const caseLabel = casePath.length > 0 ? casePath : "(root)";
 
-  if (lastLoggedSuite !== suiteLabel) {
+  if (!loggedSuites.has(suiteLabel)) {
     console.log(`Suite "${cyanBold(suiteLabel)}"`);
-    lastLoggedSuite = suiteLabel;
+    loggedSuites.add(suiteLabel);
   }
 
   const outcome = didPass ? "✅ Passed in" : "❌ Failed in";
