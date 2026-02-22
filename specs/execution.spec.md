@@ -30,8 +30,7 @@ npx katt
     ```
     Suite "<hightlight>suite</hightlight>"
     Test "<hightlight>case</hightlight>"
-    - ✅ Passed in <hightlight>123ms</hightlight> // Only if the test passed
-    - ❌ Failed in <hightlight>123ms</hightlight> // Only if the test failed
+    - ✅ Passed in <hightlight>123ms</hightlight>
     - Model <hightlight>gpt-4o</hightlight>
     - Tokens used <hightlight>48000</hightlight> // Only if tokens usage data is available for the test
     ---

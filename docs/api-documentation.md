@@ -257,13 +257,6 @@ Behavior:
 - Prints the Katt ASCII banner with the current CLI version directly below it
 - Imports and executes eval files concurrently
 - Waits for pending async tests
-- Prints per-test execution output in this format:
-  - `Suite "<suite>"` in cyan bold (once per suite)
-  - `Test "<case>"`
-  - `- ✅ Passed in <duration>ms` or `- ❌ Failed in <duration>ms`
-  - `- Model <model>` when model data is available
-  - `- Tokens used <count>` when token usage is available
-  - `---`
 - Prints failures and exits with code `1` on any failure
 - Prints summary and exits with code `0` when all pass
 

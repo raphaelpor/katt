@@ -31,7 +31,7 @@ export function it(description: string, fn: TestCallback): void {
         registerPendingTest(
           (result as Promise<void>)
             .then(() => {
-              logCurrentContextExecution(didPass(), elapsed());
+              logCurrentContextExecution(true, elapsed());
             })
             .catch((err: unknown) => {
               logCurrentContextExecution(false, elapsed());

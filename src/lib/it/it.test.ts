@@ -8,7 +8,6 @@ import {
   getItPath,
   hasDescribeContext,
   hasItContext,
-  registerFailedTest,
   resetDescribeContext,
   resetItContext,
   setCurrentTestModel,
@@ -136,59 +135,12 @@ describe("it", () => {
     expect(hasItContext()).toBe(false);
   });
 
-  it("logs failed output when an async test registers assertion failures", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-    describeFn("suite", () => {
-      itFn("case", async () => {
-        await Promise.resolve();
-        registerFailedTest({
-          describePath: "suite",
-          itPath: "case",
-          message: "expected 'value' to include 'missing'",
-        });
-      });
-    });
-
-    const settled = await settlePendingTests();
-    expect(settled.every((result) => result.status === "fulfilled")).toBe(true);
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ❌ Failed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
-      ),
-    );
-    expect(getFailedTestCount()).toBe(1);
-    expect(hasItContext()).toBe(false);
-  });
-
   it("prints suite heading once for multiple tests in same suite", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     describeFn("suite", () => {
       itFn("case one", () => {});
       itFn("case two", () => {});
-    });
-
-    expect(
-      logSpy.mock.calls.filter(
-        ([value]) =>
-          typeof value === "string" &&
-          /^Suite "\u001B\[1;36msuite\u001B\[0m"$/.test(value),
-      ),
-    ).toHaveLength(1);
-  });
-
-  it("prints suite heading once even when the same suite runs later again", () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-    describeFn("suite", () => {
-      itFn("first", () => {});
-    });
-    describeFn("other suite", () => {
-      itFn("middle", () => {});
-    });
-    describeFn("suite", () => {
-      itFn("last", () => {});
     });
 
     expect(
