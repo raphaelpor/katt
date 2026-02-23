@@ -1,7 +1,6 @@
 import type { TestCallback } from "../test-types/test-types.js";
 import {
   createChildContext,
-  getFailedTestCount,
   registerTest,
   popIt,
   pushIt,
@@ -19,10 +18,7 @@ export function it(description: string, fn: TestCallback): void {
   runWithContext(() => {
     registerTest();
     pushIt(description);
-    const failedCountBefore = getFailedTestCount();
     const startedAt = Date.now();
-
-    const didPass = () => getFailedTestCount() === failedCountBefore;
     const elapsed = () => Date.now() - startedAt;
 
     try {
@@ -31,10 +27,10 @@ export function it(description: string, fn: TestCallback): void {
         registerPendingTest(
           (result as Promise<void>)
             .then(() => {
-              logCurrentContextExecution(true, elapsed());
+              logCurrentContextExecution(elapsed());
             })
             .catch((err: unknown) => {
-              logCurrentContextExecution(false, elapsed());
+              logCurrentContextExecution(elapsed());
               throw err;
             })
             .finally(() => {
@@ -44,12 +40,12 @@ export function it(description: string, fn: TestCallback): void {
         return;
       }
     } catch (err) {
-      logCurrentContextExecution(false, elapsed());
+      logCurrentContextExecution(elapsed());
       popIt();
       throw err;
     }
 
-    logCurrentContextExecution(didPass(), elapsed());
+    logCurrentContextExecution(elapsed());
     popIt();
   }, createChildContext());
 }
