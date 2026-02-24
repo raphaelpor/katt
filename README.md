@@ -184,6 +184,16 @@ npm install
 - `npm run lint` - Lint code using Biome
 - `npm run test:build` - Test the built CLI
 
+### Verification Process
+
+To verify your changes before opening a pull request, run:
+
+1. `npm test`
+2. `npm run typecheck`
+3. `npm run lint`
+4. `npm run format`
+
+For more details, see the [verification process section in CONTRIBUTING.md](./CONTRIBUTING.md#verification-process).
 ## How It Works
 
 Katt runs eval files as executable test programs and coordinates collection, assertion failures, and reporting through its runtime context.
