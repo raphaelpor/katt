@@ -50,11 +50,7 @@ ${result}
       registerFailure(message);
       return;
     }
-    logCurrentContextExecution(
-      true,
-      Date.now() - startedAt,
-      "toBeClassifiedAs",
-    );
+    logCurrentContextExecution(Date.now() - startedAt, "toBeClassifiedAs");
   });
 
   registerPendingTest(evaluationPromise);

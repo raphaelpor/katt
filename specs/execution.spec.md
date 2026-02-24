@@ -30,8 +30,8 @@ npx katt
     ```
     Suite "<hightlight>suite</hightlight>"
     Test "<hightlight>case</hightlight>"
-    - ✅ Passed in <hightlight>123ms</hightlight>
-    - Model <hightlight>gpt-4o</hightlight>
+    - Finished in <hightlight>123 ms</hightlight>
+    - Model <hightlight>gpt-5.2</hightlight>
     - Tokens used <hightlight>48000</hightlight> // Only if tokens usage data is available for the test
     ---
     ```
@@ -58,8 +58,8 @@ npx katt
     Duration    <hightlight>539ms</hightlight>
    ```
    - The printed summary description words should be in the color `cyan` and `bold` style.
-     - Example: `Tests` in the above summary should be cyan and bold while `27 passed (27)` should be in default color and style.
-   - It exits with code `0`
+     - Example: `Evals` in the above summary should be in default color and style while `27 passed` should be cyan and bold .
+   - It exits with code `0`.
 
 Note: there is currently no success log line on passing runs.
 

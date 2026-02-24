@@ -17,7 +17,7 @@ export async function promptCheck(result: string, instructions: string) {
         Important: Answer with "Yes" or "No" only, without any additional text.
         `).then((evaluation) => {
       if (evaluation.includes("Yes")) {
-        logCurrentContextExecution(true, Date.now() - startedAt, "promptCheck");
+        logCurrentContextExecution(Date.now() - startedAt, "promptCheck");
       } else if (evaluation.includes("No")) {
         registerFailure(message);
       } else {

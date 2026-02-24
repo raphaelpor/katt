@@ -69,7 +69,7 @@ describe("it", () => {
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
   });
@@ -90,7 +90,7 @@ describe("it", () => {
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ❌ Failed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
   });
@@ -108,7 +108,7 @@ describe("it", () => {
     expect(settled.every((result) => result.status === "fulfilled")).toBe(true);
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
     expect(hasItContext()).toBe(false);
@@ -128,7 +128,7 @@ describe("it", () => {
     expect(settled[0]?.status).toBe("rejected");
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ❌ Failed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
     expect(getFailedTestCount()).toBe(0);
@@ -164,7 +164,7 @@ describe("it", () => {
 
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n- Model \u001B\[1;36mgpt-4o\u001B\[0m\n- Tokens used \u001B\[1;36m123\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n- Model \u001B\[1;36mgpt-4o\u001B\[0m\n- Tokens used \u001B\[1;36m123\u001B\[0m\n---$/,
       ),
     );
   });

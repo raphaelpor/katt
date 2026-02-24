@@ -86,12 +86,12 @@ describe("runCli", () => {
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^---\n\u001B\[1;36mFiles\u001B\[0m  1 passed\n\u001B\[1;36mEvals\u001B\[0m  1 passed\n\u001B\[1;36mStart at\u001B\[0m  \d{2}:\d{2}:\d{2}\n\u001B\[1;36mDuration\u001B\[0m  \d+ms$/,
+        /^---\nFiles\s+\u001B\[1;36m1 passed\u001B\[0m\nEvals\s+\u001B\[1;36m1 passed\u001B\[0m\nStart at\s+\u001B\[1;36m\d{2}:\d{2}:\d{2}\u001B\[0m\nDuration\s+\u001B\[1;36m\d+ms\u001B\[0m$/,
       ),
     );
   });

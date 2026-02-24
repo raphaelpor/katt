@@ -39,7 +39,7 @@ describe("toBeClassifiedAs", () => {
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mtoBeClassifiedAs\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mtoBeClassifiedAs\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
     expect(errorSpy).not.toHaveBeenCalled();
@@ -76,7 +76,7 @@ describe("toBeClassifiedAs", () => {
 
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^Test "\u001B\[1;36mtoBeClassifiedAs\u001B\[0m"\n- ✅ Passed in \u001B\[1;36m\d+ms\u001B\[0m\n---$/,
+        /^Test "\u001B\[1;36mtoBeClassifiedAs\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
       ),
     );
     expect(errorSpy).not.toHaveBeenCalled();
