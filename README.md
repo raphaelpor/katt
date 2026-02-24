@@ -217,39 +217,18 @@ Katt runs eval files as executable test programs and coordinates collection, ass
 ```mermaid
 sequenceDiagram
   participant User as User/CI
-  participant CLI as CLI (katt/npx katt)
-  participant Runner as runCli()
-  participant FS as File Discovery + Config
+  participant CLI as katt CLI
+  participant FS as File Scanner
   participant Eval as Eval Runtime
-  participant Reporter as Reporter
+  participant Report as Reporter
 
-  User->>CLI: Run command
-  CLI->>Runner: Invoke runCli()
-  alt Help flag present
-    Runner->>Reporter: Show banner and usage
-    Reporter-->>User: Exit code 0
-  else Continue execution
-    Runner->>FS: Parse flags and load config ignore patterns
-    FS-->>Runner: Return ignore patterns
-    Runner->>FS: Find *.eval.ts / *.eval.js recursively
-    alt No eval files found
-      Runner->>Reporter: Print no-files message
-      Reporter-->>User: Exit code 1
-    else Eval files found
-      Runner->>Eval: Import eval files concurrently
-      Eval->>Eval: Register describe()/it() and settle async tests
-      alt Import or async test failures
-        Runner->>Reporter: Print execution errors
-        Reporter-->>User: Exit code 1
-      else Matcher failures recorded
-        Runner->>Reporter: Print failed tests
-        Reporter-->>User: Exit code 1
-      else Success
-        Runner->>Reporter: Print summary (files, evals, duration)
-        Reporter-->>User: Exit code 0
-      end
-    end
-  end
+  User->>CLI: Run `katt`
+  CLI->>FS: Discover `*.eval.js` and `*.eval.ts`
+  FS-->>CLI: Return eval file list
+  CLI->>Eval: Execute eval files
+  Eval-->>CLI: Return pass/fail results
+  CLI->>Report: Print per-test output + summary
+  Report-->>User: Exit code (`0` pass, `1` fail)
 ```
 
 1. Katt searches the current directory recursively for `*.eval.js` and `*.eval.ts` files
