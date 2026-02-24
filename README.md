@@ -17,6 +17,8 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 - [Specifying AI Models](#specifying-ai-models)
 - [Development](#development)
 - [How It Works](#how-it-works)
+- [Execution Flow](#execution-flow)
+- [Architecture](#architecture)
 - [Requirements](#requirements)
 - [License](#license)
 - [Contributing](#contributing)
@@ -125,7 +127,7 @@ describe("Model selection", () => {
 
 You can also set runtime defaults in `katt.json`.
 
-Copilot (default runtime):
+GitHub Copilot (default runtime):
 
 ```json
 {
@@ -184,29 +186,36 @@ npm install
 
 ### Verification Process
 
-After making changes, run the following sequence:
+To verify your changes before opening a pull request, run:
 
-1. `npm run format`
+1. `npm test`
 2. `npm run typecheck`
-3. `npm run test`
-4. `npm run build`
-5. `npm run test:build`
+3. `npm run lint`
+4. `npm run format`
 
-## Project Structure
-
-```
-katt/
-├── src/              # Source code
-│   ├── cli/          # CLI implementation
-│   ├── lib/          # Core libraries (describe, it, expect, prompt)
-│   └── types/        # TypeScript type definitions
-├── examples/         # Example eval files
-├── specs/            # Markdown specifications
-├── package.json      # Package configuration
-└── tsconfig.json     # TypeScript configuration
-```
-
+For more details, see the [verification process section in CONTRIBUTING.md](./CONTRIBUTING.md#verification-process).
 ## How It Works
+
+Katt runs eval files as executable test programs and coordinates collection, assertion failures, and reporting through its runtime context.
+
+## Execution Flow
+
+```mermaid
+sequenceDiagram
+  participant User as User/CI
+  participant CLI as katt CLI
+  participant FS as File Scanner
+  participant Eval as Eval Runtime
+  participant Report as Reporter
+
+  User->>CLI: Run `npx katt`
+  CLI->>FS: Discover `*.eval.js` and `*.eval.ts`
+  FS-->>CLI: Return eval file list
+  CLI->>Eval: Execute eval files
+  Eval-->>CLI: Return pass/fail results
+  CLI->>Report: Print per-test output + summary
+  Report-->>User: Exit code (`0` pass, `1` fail)
+```
 
 1. Katt searches the current directory recursively for `*.eval.js` and `*.eval.ts` files
 2. It skips `.git` and `node_modules` directories
@@ -215,6 +224,22 @@ katt/
 5. Each test duration is printed after execution
 6. A summary is displayed showing passed/failed tests and total duration
 7. Katt exits with code `0` on success or `1` on failure
+
+## Architecture
+
+```mermaid
+flowchart LR
+  User["Developer"] --> CLI["katt CLI"]
+  CLI --> EvalFiles["Eval files (*.eval.ts / *.eval.js)"]
+  CLI --> Config["katt.json config"]
+  EvalFiles --> Runtime["Test runtime (describe/it context)"]
+  Config --> Runtime
+  Runtime --> Assertions["Assertions + snapshots"]
+  Runtime --> Prompts["prompt() / promptFile()"]
+  Prompts --> AI["AI runtime (GitHub Copilot or Codex CLI)"]
+  Assertions --> Report["Terminal report + exit code"]
+  AI --> Report
+```
 
 ## Requirements
 
