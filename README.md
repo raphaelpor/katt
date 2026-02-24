@@ -219,57 +219,16 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  subgraph CLI["CLI Layer"]
-    CliEntry["src/cli.ts"]
-    RunCli["src/cli/runCli.ts"]
-    FindEval["src/cli/findEvalFiles.ts"]
-  end
-
-  subgraph Runtime["Runtime Context Layer"]
-    Describe["describe()"]
-    It["it()"]
-    Context["src/lib/context/context.ts"]
-    EvalFileContext["src/lib/context/evalFileContext.ts"]
-    Logging["src/lib/output/testLogging.ts"]
-  end
-
-  subgraph Assertions["Assertion Layer"]
-    Expect["expect()"]
-    Matchers["toContain / toMatchSnapshot / promptCheck / toBeClassifiedAs"]
-    SnapshotFiles["__snapshots__/*.snap.md"]
-  end
-
-  subgraph Prompting["Prompt Layer"]
-    PromptApi["prompt() / promptFile()"]
-    Copilot["GitHub Copilot SDK"]
-    Codex["Codex CLI (codex exec)"]
-  end
-
-  Config["katt.json via src/lib/config/config.ts"]
-  EvalFiles["*.eval.ts / *.eval.js files"]
-
-  CliEntry --> RunCli
-  RunCli --> FindEval
-  FindEval --> EvalFiles
-  RunCli --> Config
-  RunCli --> EvalFileContext
-
-  EvalFiles --> Describe
-  EvalFiles --> It
-  Describe --> Context
-  It --> Context
-  It --> Logging
-  It --> Expect
-
-  Expect --> Matchers
-  Matchers --> Context
-  Matchers --> SnapshotFiles
-
-  EvalFiles --> PromptApi
-  PromptApi --> Config
-  PromptApi --> Context
-  PromptApi --> Copilot
-  PromptApi --> Codex
+  User["Developer"] --> CLI["katt CLI"]
+  CLI --> EvalFiles["Eval files (*.eval.ts / *.eval.js)"]
+  CLI --> Config["katt.json config"]
+  EvalFiles --> Runtime["Test runtime (describe/it context)"]
+  Config --> Runtime
+  Runtime --> Assertions["Assertions + snapshots"]
+  Runtime --> Prompts["prompt() / promptFile()"]
+  Prompts --> AI["AI runtime (GitHub Copilot or Codex CLI)"]
+  Assertions --> Report["Terminal report + exit code"]
+  AI --> Report
 ```
 
 ## Requirements
