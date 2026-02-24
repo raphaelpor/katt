@@ -17,6 +17,8 @@ Katt is a lightweight testing framework for running AI Evals, inspired by [Jest]
 - [Specifying AI Models](#specifying-ai-models)
 - [Development](#development)
 - [How It Works](#how-it-works)
+- [Execution Flow](#execution-flow)
+- [Architecture](#architecture)
 - [Requirements](#requirements)
 - [License](#license)
 - [Contributing](#contributing)
@@ -208,6 +210,30 @@ katt/
 
 ## How It Works
 
+Katt runs eval files as executable test programs and coordinates collection, assertion failures, and reporting through its runtime context.
+
+## Execution Flow
+
+```mermaid
+flowchart TD
+  A["CLI command (`katt` / `npx katt`)"] --> B["`src/cli.ts` invokes `runCli()`"]
+  B --> C{"Help flag present?"}
+  C -->|Yes| D["Show banner and usage; exit code `0`"]
+  C -->|No| E["Parse `--config-file` and `--update-snapshots` flags"]
+  E --> F["Load ignore patterns from config"]
+  F --> G["Find `*.eval.ts` and `*.eval.js` files recursively"]
+  G --> H{"Any eval files found?"}
+  H -->|No| I["Print no-files message; exit code `1`"]
+  H -->|Yes| J["Import eval files concurrently (`Promise.allSettled`)"]
+  J --> K["Eval files call `describe()` / `it()` and register tests"]
+  K --> L["Settle pending async tests"]
+  L --> M{"Import or async test failures?"}
+  M -->|Yes| N["Print execution errors; exit code `1`"]
+  M -->|No| O{"Matcher failures recorded?"}
+  O -->|Yes| P["Print failed tests; exit code `1`"]
+  O -->|No| Q["Print summary (files, evals, duration); exit code `0`"]
+```
+
 1. Katt searches the current directory recursively for `*.eval.js` and `*.eval.ts` files
 2. It skips `.git` and `node_modules` directories
 3. Found eval files are imported and executed concurrently
@@ -215,6 +241,63 @@ katt/
 5. Each test duration is printed after execution
 6. A summary is displayed showing passed/failed tests and total duration
 7. Katt exits with code `0` on success or `1` on failure
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph CLI["CLI Layer"]
+    CliEntry["`src/cli.ts`"]
+    RunCli["`src/cli/runCli.ts`"]
+    FindEval["`src/cli/findEvalFiles.ts`"]
+  end
+
+  subgraph Runtime["Runtime Context Layer"]
+    Describe["`describe()`"]
+    It["`it()`"]
+    Context["`src/lib/context/context.ts`"]
+    EvalFileContext["`src/lib/context/evalFileContext.ts`"]
+    Logging["`src/lib/output/testLogging.ts`"]
+  end
+
+  subgraph Assertions["Assertion Layer"]
+    Expect["`expect()`"]
+    Matchers["`toContain` / `toMatchSnapshot` / `promptCheck` / `toBeClassifiedAs`"]
+    SnapshotFiles["`__snapshots__/*.snap.md`"]
+  end
+
+  subgraph Prompting["Prompt Layer"]
+    PromptApi["`prompt()` / `promptFile()`"]
+    Copilot["GitHub Copilot SDK"]
+    Codex["Codex CLI (`codex exec`)"]
+  end
+
+  Config["`katt.json` via `src/lib/config/config.ts`"]
+  EvalFiles["`*.eval.ts` / `*.eval.js` files"]
+
+  CliEntry --> RunCli
+  RunCli --> FindEval
+  FindEval --> EvalFiles
+  RunCli --> Config
+  RunCli --> EvalFileContext
+
+  EvalFiles --> Describe
+  EvalFiles --> It
+  Describe --> Context
+  It --> Context
+  It --> Logging
+  It --> Expect
+
+  Expect --> Matchers
+  Matchers --> Context
+  Matchers --> SnapshotFiles
+
+  EvalFiles --> PromptApi
+  PromptApi --> Config
+  PromptApi --> Context
+  PromptApi --> Copilot
+  PromptApi --> Codex
+```
 
 ## Requirements
 
