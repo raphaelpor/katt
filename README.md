@@ -216,22 +216,22 @@ Katt runs eval files as executable test programs and coordinates collection, ass
 
 ```mermaid
 flowchart TD
-  A["CLI command (`katt` / `npx katt`)"] --> B["`src/cli.ts` invokes `runCli()`"]
+  A["CLI command (katt / npx katt)"] --> B["src/cli.ts invokes runCli()"]
   B --> C{"Help flag present?"}
-  C -->|Yes| D["Show banner and usage; exit code `0`"]
-  C -->|No| E["Parse `--config-file` and `--update-snapshots` flags"]
+  C -->|Yes| D["Show banner and usage; exit code 0"]
+  C -->|No| E["Parse --config-file and --update-snapshots flags"]
   E --> F["Load ignore patterns from config"]
-  F --> G["Find `*.eval.ts` and `*.eval.js` files recursively"]
+  F --> G["Find *.eval.ts and *.eval.js files recursively"]
   G --> H{"Any eval files found?"}
-  H -->|No| I["Print no-files message; exit code `1`"]
-  H -->|Yes| J["Import eval files concurrently (`Promise.allSettled`)"]
-  J --> K["Eval files call `describe()` / `it()` and register tests"]
+  H -->|No| I["Print no-files message; exit code 1"]
+  H -->|Yes| J["Import eval files concurrently (Promise.allSettled)"]
+  J --> K["Eval files call describe() / it() and register tests"]
   K --> L["Settle pending async tests"]
   L --> M{"Import or async test failures?"}
-  M -->|Yes| N["Print execution errors; exit code `1`"]
+  M -->|Yes| N["Print execution errors; exit code 1"]
   M -->|No| O{"Matcher failures recorded?"}
-  O -->|Yes| P["Print failed tests; exit code `1`"]
-  O -->|No| Q["Print summary (files, evals, duration); exit code `0`"]
+  O -->|Yes| P["Print failed tests; exit code 1"]
+  O -->|No| Q["Print summary (files, evals, duration); exit code 0"]
 ```
 
 1. Katt searches the current directory recursively for `*.eval.js` and `*.eval.ts` files
@@ -247,33 +247,33 @@ flowchart TD
 ```mermaid
 flowchart LR
   subgraph CLI["CLI Layer"]
-    CliEntry["`src/cli.ts`"]
-    RunCli["`src/cli/runCli.ts`"]
-    FindEval["`src/cli/findEvalFiles.ts`"]
+    CliEntry["src/cli.ts"]
+    RunCli["src/cli/runCli.ts"]
+    FindEval["src/cli/findEvalFiles.ts"]
   end
 
   subgraph Runtime["Runtime Context Layer"]
-    Describe["`describe()`"]
-    It["`it()`"]
-    Context["`src/lib/context/context.ts`"]
-    EvalFileContext["`src/lib/context/evalFileContext.ts`"]
-    Logging["`src/lib/output/testLogging.ts`"]
+    Describe["describe()"]
+    It["it()"]
+    Context["src/lib/context/context.ts"]
+    EvalFileContext["src/lib/context/evalFileContext.ts"]
+    Logging["src/lib/output/testLogging.ts"]
   end
 
   subgraph Assertions["Assertion Layer"]
-    Expect["`expect()`"]
-    Matchers["`toContain` / `toMatchSnapshot` / `promptCheck` / `toBeClassifiedAs`"]
-    SnapshotFiles["`__snapshots__/*.snap.md`"]
+    Expect["expect()"]
+    Matchers["toContain / toMatchSnapshot / promptCheck / toBeClassifiedAs"]
+    SnapshotFiles["__snapshots__/*.snap.md"]
   end
 
   subgraph Prompting["Prompt Layer"]
-    PromptApi["`prompt()` / `promptFile()`"]
+    PromptApi["prompt() / promptFile()"]
     Copilot["GitHub Copilot SDK"]
-    Codex["Codex CLI (`codex exec`)"]
+    Codex["Codex CLI (codex exec)"]
   end
 
-  Config["`katt.json` via `src/lib/config/config.ts`"]
-  EvalFiles["`*.eval.ts` / `*.eval.js` files"]
+  Config["katt.json via src/lib/config/config.ts"]
+  EvalFiles["*.eval.ts / *.eval.js files"]
 
   CliEntry --> RunCli
   RunCli --> FindEval
