@@ -208,7 +208,7 @@ sequenceDiagram
   participant Eval as Eval Runtime
   participant Report as Reporter
 
-  User->>CLI: Run `katt`
+  User->>CLI: Run `npx katt`
   CLI->>FS: Discover `*.eval.js` and `*.eval.ts`
   FS-->>CLI: Return eval file list
   CLI->>Eval: Execute eval files
