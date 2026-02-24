@@ -127,7 +127,7 @@ describe("Model selection", () => {
 
 You can also set runtime defaults in `katt.json`.
 
-Copilot (default runtime):
+Github Copilot (default runtime):
 
 ```json
 {
