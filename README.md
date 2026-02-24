@@ -184,30 +184,6 @@ npm install
 - `npm run lint` - Lint code using Biome
 - `npm run test:build` - Test the built CLI
 
-### Verification Process
-
-After making changes, run the following sequence:
-
-1. `npm run format`
-2. `npm run typecheck`
-3. `npm run test`
-4. `npm run build`
-5. `npm run test:build`
-
-## Project Structure
-
-```
-katt/
-├── src/              # Source code
-│   ├── cli/          # CLI implementation
-│   ├── lib/          # Core libraries (describe, it, expect, prompt)
-│   └── types/        # TypeScript type definitions
-├── examples/         # Example eval files
-├── specs/            # Markdown specifications
-├── package.json      # Package configuration
-└── tsconfig.json     # TypeScript configuration
-```
-
 ## How It Works
 
 Katt runs eval files as executable test programs and coordinates collection, assertion failures, and reporting through its runtime context.
