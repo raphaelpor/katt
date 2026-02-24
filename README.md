@@ -215,23 +215,41 @@ Katt runs eval files as executable test programs and coordinates collection, ass
 ## Execution Flow
 
 ```mermaid
-flowchart TD
-  A["CLI command (katt / npx katt)"] --> B["src/cli.ts invokes runCli()"]
-  B --> C{"Help flag present?"}
-  C -->|Yes| D["Show banner and usage; exit code 0"]
-  C -->|No| E["Parse --config-file and --update-snapshots flags"]
-  E --> F["Load ignore patterns from config"]
-  F --> G["Find *.eval.ts and *.eval.js files recursively"]
-  G --> H{"Any eval files found?"}
-  H -->|No| I["Print no-files message; exit code 1"]
-  H -->|Yes| J["Import eval files concurrently (Promise.allSettled)"]
-  J --> K["Eval files call describe() / it() and register tests"]
-  K --> L["Settle pending async tests"]
-  L --> M{"Import or async test failures?"}
-  M -->|Yes| N["Print execution errors; exit code 1"]
-  M -->|No| O{"Matcher failures recorded?"}
-  O -->|Yes| P["Print failed tests; exit code 1"]
-  O -->|No| Q["Print summary (files, evals, duration); exit code 0"]
+sequenceDiagram
+  participant User as User/CI
+  participant CLI as CLI (katt/npx katt)
+  participant Runner as runCli()
+  participant FS as File Discovery + Config
+  participant Eval as Eval Runtime
+  participant Reporter as Reporter
+
+  User->>CLI: Run command
+  CLI->>Runner: Invoke runCli()
+  alt Help flag present
+    Runner->>Reporter: Show banner and usage
+    Reporter-->>User: Exit code 0
+  else Continue execution
+    Runner->>FS: Parse flags and load config ignore patterns
+    FS-->>Runner: Return ignore patterns
+    Runner->>FS: Find *.eval.ts / *.eval.js recursively
+    alt No eval files found
+      Runner->>Reporter: Print no-files message
+      Reporter-->>User: Exit code 1
+    else Eval files found
+      Runner->>Eval: Import eval files concurrently
+      Eval->>Eval: Register describe()/it() and settle async tests
+      alt Import or async test failures
+        Runner->>Reporter: Print execution errors
+        Reporter-->>User: Exit code 1
+      else Matcher failures recorded
+        Runner->>Reporter: Print failed tests
+        Reporter-->>User: Exit code 1
+      else Success
+        Runner->>Reporter: Print summary (files, evals, duration)
+        Reporter-->>User: Exit code 0
+      end
+    end
+  end
 ```
 
 1. Katt searches the current directory recursively for `*.eval.js` and `*.eval.ts` files
