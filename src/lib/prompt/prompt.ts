@@ -1,5 +1,9 @@
-import { CopilotClient, type CopilotSession } from "@github/copilot-sdk";
-import type { SessionConfig } from "@github/copilot-sdk";
+import {
+  CopilotClient,
+  approveAll,
+  type CopilotSession,
+} from "@github/copilot-sdk";
+import type { PermissionHandler, SessionConfig } from "@github/copilot-sdk";
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import {
@@ -12,8 +16,9 @@ import { runCodexPrompt } from "./codex.js";
 
 export const DEFAULT_PROMPT_TIMEOUT_MS = 600_000;
 
-export type PromptOptions = SessionConfig &
-  Record<string, unknown> & {
+export type PromptOptions = Omit<SessionConfig, "onPermissionRequest"> & {
+  onPermissionRequest?: PermissionHandler;
+} & Record<string, unknown> & {
     timeoutMs?: number;
   };
 
@@ -78,7 +83,11 @@ export async function prompt(
   input: string,
   options: PromptOptions = {},
 ): Promise<string> {
-  const { timeoutMs: explicitTimeoutMsRaw, ...explicitSessionConfig } = options;
+  const {
+    timeoutMs: explicitTimeoutMsRaw,
+    onPermissionRequest,
+    ...explicitSessionConfig
+  } = options;
   const defaults = await getDefaultKattConfig();
   const configOptions = normalizeAgentConfig(defaults.agentOptions);
   const explicitOptions = normalizeAgentConfig(
@@ -115,7 +124,10 @@ export async function prompt(
 
   try {
     await client.start();
-    session = await client.createSession(sessionOptions as SessionConfig);
+    session = await client.createSession({
+      ...sessionOptions,
+      onPermissionRequest: onPermissionRequest ?? approveAll,
+    } as SessionConfig);
     unsubscribeUsage = session.on("assistant.usage", (event) => {
       usedTokens += getUsageTokens(event.data);
     });
