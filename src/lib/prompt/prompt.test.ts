@@ -107,7 +107,8 @@ vi.mock("@github/copilot-sdk", () => {
       return createSessionMock(...args);
     }
   }
-  return { CopilotClient };
+  const approveAll = vi.fn();
+  return { CopilotClient, approveAll };
 });
 
 describe("prompt", () => {
@@ -147,7 +148,10 @@ describe("prompt", () => {
 
     await prompt("Hello", { model: "gpt-5.2" });
 
-    expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-5.2" });
+    expect(createSessionMock).toHaveBeenCalledWith({
+      model: "gpt-5.2",
+      onPermissionRequest: expect.any(Function),
+    });
   });
 
   it("uses model from katt.json when no explicit model is provided", async () => {
@@ -160,7 +164,10 @@ describe("prompt", () => {
 
     await prompt("Hello");
 
-    expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-4o" });
+    expect(createSessionMock).toHaveBeenCalledWith({
+      model: "gpt-4o",
+      onPermissionRequest: expect.any(Function),
+    });
   });
 
   it("passes non-model agent options from katt.json to session creation", async () => {
@@ -181,6 +188,7 @@ describe("prompt", () => {
       model: "gpt-4o",
       reasoningEffort: "high",
       streaming: true,
+      onPermissionRequest: expect.any(Function),
     });
   });
 
@@ -200,6 +208,7 @@ describe("prompt", () => {
     expect(createSessionMock).toHaveBeenCalledWith({
       model: "gpt-5.2",
       streaming: true,
+      onPermissionRequest: expect.any(Function),
     });
   });
 
@@ -271,7 +280,10 @@ describe("prompt", () => {
 
     await prompt("Hello", { model: "gpt-5.2", timeoutMs: 300000 });
 
-    expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-5.2" });
+    expect(createSessionMock).toHaveBeenCalledWith({
+      model: "gpt-5.2",
+      onPermissionRequest: expect.any(Function),
+    });
   });
 
   it("tracks assistant usage as test token usage", async () => {
@@ -373,7 +385,10 @@ describe("promptFile", () => {
 
     await promptFile("/tmp/prompt.md", { model: "gpt-5.2" });
 
-    expect(createSessionMock).toHaveBeenCalledWith({ model: "gpt-5.2" });
+    expect(createSessionMock).toHaveBeenCalledWith({
+      model: "gpt-5.2",
+      onPermissionRequest: expect.any(Function),
+    });
   });
 
   it("resolves relative paths against the eval file directory", async () => {
