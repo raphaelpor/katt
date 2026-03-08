@@ -27,6 +27,7 @@
     "dev": "tsx src/index.ts",
     "lint": "biome lint ./src",
     "format": "biome format --write ./src",
+    "postinstall": "node scripts/patch-vscode-jsonrpc.cjs",
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:build": "node ./dist/katt.js",
