@@ -160,10 +160,10 @@ export async function runCli(): Promise<number> {
   console.log(
     [
       "---",
-      `${cyanBold("Files")}  ${evalFiles.length} passed`,
-      `${cyanBold("Evals")}  ${totalTests} passed`,
-      `${cyanBold("Start at")}  ${formatStartTime(startTime)}`,
-      `${cyanBold("Duration")}  ${durationMs}ms`,
+      `Files       ${cyanBold(`${evalFiles.length} passed`)}`,
+      `Evals       ${cyanBold(`${totalTests} passed`)}`,
+      `Start at    ${cyanBold(formatStartTime(startTime))}`,
+      `Duration    ${cyanBold(`${durationMs}ms`)}`,
     ].join("\n"),
   );
 

@@ -16,3 +16,4 @@ When a snapshot test fails due to a value mismatch, the test runner should provi
 ## Diff
 
 When a snapshot test fails, the test runner should display a diff between the expected snapshot value and the actual value. The diff should highlight additions, deletions, and changes to help developers understand what has changed.
+
