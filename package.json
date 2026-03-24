@@ -1,6 +1,6 @@
 {
   "name": "katt",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "CLI tool that tests the output of agentic AI tools",
   "keywords": [
     "cli",
