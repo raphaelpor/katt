@@ -327,10 +327,10 @@ describe("runCli", () => {
     );
     expect(logSpy).toHaveBeenCalledTimes(1);
     const summary = logSpy.mock.calls[0]?.[0] ?? "";
-    expect(summary).toContain("[Files]  2 passed");
-    expect(summary).toContain("[Evals]  3 passed");
-    expect(summary).toMatch(/\[Start at\]\s+\d{2}:\d{2}:\d{2}/);
-    expect(summary).toContain("[Duration]");
+    expect(summary).toContain("Files       [2 passed]");
+    expect(summary).toContain("Evals       [3 passed]");
+    expect(summary).toMatch(/Start at\s+\[\d{2}:\d{2}:\d{2}\]/);
+    expect(summary).toMatch(/Duration\s+\[\d+ms\]/);
   });
 
   it("passes config ignore patterns to eval file discovery", async () => {

@@ -15,7 +15,6 @@ export function resetTestLoggingState(): void {
 type TestLogOptions = {
   suitePath: string;
   casePath: string;
-  didPass: boolean;
   durationMs: number;
   model?: string;
   tokenUsage?: number;
@@ -24,7 +23,6 @@ type TestLogOptions = {
 export function logTestExecution({
   suitePath,
   casePath,
-  didPass,
   durationMs,
   model,
   tokenUsage,
@@ -37,10 +35,9 @@ export function logTestExecution({
     lastLoggedSuite = suiteLabel;
   }
 
-  const outcome = didPass ? "✅ Passed in" : "❌ Failed in";
   const lines = [
     `Test "${cyanBold(caseLabel)}"`,
-    `- ${outcome} ${cyanBold(`${durationMs}ms`)}`,
+    `- Finished in ${cyanBold(`${durationMs} ms`)}`,
   ];
 
   if (model) {
@@ -56,7 +53,6 @@ export function logTestExecution({
 }
 
 export function logCurrentContextExecution(
-  didPass: boolean,
   durationMs: number,
   fallbackCasePath = "(root)",
 ): void {
@@ -64,7 +60,6 @@ export function logCurrentContextExecution(
   logTestExecution({
     suitePath: getDescribePath(),
     casePath: casePath.length > 0 ? casePath : fallbackCasePath,
-    didPass,
     durationMs,
     model: getCurrentTestModel(),
     tokenUsage: getCurrentTestTokenUsage(),
