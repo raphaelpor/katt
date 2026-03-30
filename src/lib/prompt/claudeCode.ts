@@ -24,17 +24,16 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
-function readToolList(value: unknown): string | undefined {
+function readToolList(value: unknown): string[] {
   if (isNonEmptyString(value)) {
-    return value;
+    return [value];
   }
 
   if (!Array.isArray(value)) {
-    return undefined;
+    return [];
   }
 
-  const tools = value.filter(isNonEmptyString);
-  return tools.length > 0 ? tools.join(",") : undefined;
+  return value.filter(isNonEmptyString);
 }
 
 function readMaxTurns(value: unknown): number | undefined {
@@ -42,7 +41,8 @@ function readMaxTurns(value: unknown): number | undefined {
     return undefined;
   }
 
-  return Math.floor(value);
+  const maxTurns = Math.floor(value);
+  return maxTurns > 0 ? maxTurns : undefined;
 }
 
 function buildClaudeCodeArgs(
@@ -69,13 +69,13 @@ function buildClaudeCodeArgs(
   }
 
   const allowedTools = readToolList(claudeOptions.allowedTools);
-  if (allowedTools) {
-    args.push("--allowedTools", allowedTools);
+  if (allowedTools.length > 0) {
+    args.push("--allowedTools", ...allowedTools);
   }
 
   const disallowedTools = readToolList(claudeOptions.disallowedTools);
-  if (disallowedTools) {
-    args.push("--disallowedTools", disallowedTools);
+  if (disallowedTools.length > 0) {
+    args.push("--disallowedTools", ...disallowedTools);
   }
 
   if (isNonEmptyString(claudeOptions.appendSystemPrompt)) {

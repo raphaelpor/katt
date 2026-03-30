@@ -196,6 +196,17 @@ describe("runClaudeCodePrompt", () => {
     expect(args).not.toContain("--max-turns");
   });
 
+  it("ignores maxTurns values that floor to zero", async () => {
+    setupSuccessfulClaude(JSON.stringify({ type: "result", result: "ok" }));
+
+    await runClaudeCodePrompt("test prompt", 30000, {
+      maxTurns: 0.5,
+    });
+
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).not.toContain("--max-turns");
+  });
+
   it("passes allowedTools string option", async () => {
     setupSuccessfulClaude(JSON.stringify({ type: "result", result: "ok" }));
 
@@ -217,10 +228,9 @@ describe("runClaudeCodePrompt", () => {
       allowedTools: ["Edit", "", "Bash"],
     });
 
-    expect(spawnMock).toHaveBeenCalledWith(
-      "claude",
-      expect.arrayContaining(["--allowedTools", "Edit,Bash"]),
-      expect.anything(),
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).toEqual(
+      expect.arrayContaining(["--allowedTools", "Edit", "Bash"]),
     );
   });
 
@@ -231,10 +241,9 @@ describe("runClaudeCodePrompt", () => {
       disallowedTools: ["WebFetch", "WebSearch"],
     });
 
-    expect(spawnMock).toHaveBeenCalledWith(
-      "claude",
-      expect.arrayContaining(["--disallowedTools", "WebFetch,WebSearch"]),
-      expect.anything(),
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).toEqual(
+      expect.arrayContaining(["--disallowedTools", "WebFetch", "WebSearch"]),
     );
   });
 
