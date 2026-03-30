@@ -33,7 +33,7 @@ This document lists the currently available Katt features and how to use them.
 - AI-based classification matcher: `toBeClassifiedAs`
 - Prompt execution with provider-specific runtime options
 - Prompt loading from files with relative-path resolution
-- Default runtime configuration via `katt.json` (or `--config-file`) for `gh-copilot`/`codex`
+- Default runtime configuration via `katt.json` (or `--config-file`) for `gh-copilot`/`codex`/`claude-code`
 - Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
@@ -157,6 +157,16 @@ Sends `input` to the AI model and returns the response string.
   - `dangerouslyBypassApprovalsAndSandbox?: boolean`
   - `config?: string | string[]` (forwarded as `codex exec --config`)
   - `workingDirectory?: string`
+- For `claude-code`: Claude Code CLI options:
+  - `model?: string`
+  - `permissionMode?: string` (forwarded as `--permission-mode`)
+  - `dangerouslySkipPermissions?: boolean`
+  - `maxTurns?: number`
+  - `allowedTools?: string | string[]`
+  - `disallowedTools?: string | string[]`
+  - `appendSystemPrompt?: string`
+  - `mcpConfig?: string`
+  - `workingDirectory?: string`
 - `timeoutMs?: number` to control how long to wait for prompt completion
 - Explicit options override matching keys from config `agentOptions`
 
@@ -221,10 +231,26 @@ Or use Codex:
 }
 ```
 
+Or use Claude Code:
+
+```json
+{
+  "agent": "claude-code",
+  "agentOptions": {
+    "model": "claude-sonnet-4",
+    "permissionMode": "acceptEdits"
+  },
+  "prompt": {
+    "timeoutMs": 240000
+  }
+}
+```
+
 Behavior:
 - Supported agents:
   - `gh-copilot` (default when `agent` is missing or unsupported)
   - `codex`
+  - `claude-code`
 - Default config location is `<cwd>/katt.json`
 - CLI override: `--config-file <path>` or `--config-file=<path>`
   - Relative paths are resolved from `process.cwd()`

@@ -43,7 +43,7 @@ Top-level JSON object with optional `agent`, `agentOptions`, `prompt`, and
 Supported keys:
 
 - `agent?: string`
-  - Supported values: `"gh-copilot"`, `"codex"`
+  - Supported values: `"gh-copilot"`, `"codex"`, `"claude-code"`
   - Missing/unsupported values default runtime selection to `"gh-copilot"`
 - `agentOptions?: object`
 - `agentOptions.model?: string`
@@ -53,6 +53,11 @@ Supported keys:
     - `profile`, `sandbox`, `fullAuto`, `skipGitRepoCheck`,
       `dangerouslyBypassApprovalsAndSandbox`, `config`, `workingDirectory`
     - unsupported keys are ignored by the Codex runner
+  - `claude-code`: supported keys are translated to `claude -p` flags:
+    - `permissionMode`, `dangerouslySkipPermissions`, `maxTurns`,
+      `allowedTools`, `disallowedTools`, `appendSystemPrompt`, `mcpConfig`,
+      `workingDirectory`
+    - unsupported keys are ignored by the Claude Code runner
 - `prompt?: object`
 - `prompt.timeoutMs?: number` (positive values only)
 - `ignorePatterns?: string[]`
@@ -78,7 +83,7 @@ value.
    - `promptTimeoutMs: undefined`
 4. Parses JSON content.
 5. Resolves `agent`:
-   - Uses `agent` when it is `"gh-copilot"` or `"codex"`
+   - Uses `agent` when it is `"gh-copilot"`, `"codex"`, or `"claude-code"`
    - Otherwise falls back to `"gh-copilot"`
 6. Returns `agentOptions` only when:
    - `agent` in file is a supported value, and
@@ -92,7 +97,7 @@ value.
 
 1. Reads defaults via `getDefaultKattConfig()`.
 2. Returns `agentOptions` only when selected `agent` is `"gh-copilot"`.
-3. Returns `undefined` when selected `agent` is `"codex"`.
+3. Returns `undefined` when selected `agent` is `"codex"` or `"claude-code"`.
 
 `getDefaultPromptTimeoutMs()`:
 
@@ -148,7 +153,7 @@ value.
 For `prompt(input, options?)` and `promptFile(filePath, options?)`:
 
 1. Resolve active runtime from config `agent`:
-   - `"gh-copilot"` or `"codex"`
+   - `"gh-copilot"`, `"codex"`, or `"claude-code"`
    - fallback `"gh-copilot"` when missing/unsupported
 2. Start from config `agentOptions` when available for the selected
    runtime.
@@ -158,6 +163,7 @@ For `prompt(input, options?)` and `promptFile(filePath, options?)`:
 5. Execute with selected runtime:
    - `gh-copilot`: create Copilot session with merged options
    - `codex`: run `codex exec` with mapped supported options
+   - `claude-code`: run `claude -p` with mapped supported options
 6. Resolve prompt timeout with precedence:
    - `options.timeoutMs` (valid positive number)
    - config `prompt.timeoutMs` (valid positive number)

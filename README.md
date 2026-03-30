@@ -65,7 +65,7 @@ describe("Greeting agent", () => {
 - **Classification Matcher**: Built-in `toBeClassifiedAs()` matcher to grade a response against a target label on a 1-5 scale
 - **Concurrent Execution**: Runs eval files concurrently for faster test execution
 - **Model Selection**: Support for specifying custom AI models
-- **Runtime Selection**: Run prompts through GitHub Copilot (default) or Codex
+- **Runtime Selection**: Run prompts through GitHub Copilot (default), Codex, or Claude Code
 - **Configurable Timeouts**: Override prompt wait time per test or via `katt.json`
 
 ## Usage
@@ -157,11 +157,27 @@ Codex:
 }
 ```
 
+Claude Code:
+
+```json
+{
+  "agent": "claude-code",
+  "agentOptions": {
+    "model": "claude-sonnet-4",
+    "permissionMode": "acceptEdits"
+  },
+  "prompt": {
+    "timeoutMs": 240000
+  }
+}
+```
+
 When this file exists:
 
 - Supported agents are:
   - `gh-copilot` (default when `agent` is missing or unsupported)
   - `codex`
+  - `claude-code`
 - `prompt("...")` and `promptFile("...")` merge `agentOptions` with call-time options
 - `prompt("...", { model: "..." })` overrides the model from config
 - `prompt.timeoutMs` sets the default wait timeout for long-running prompts
@@ -183,15 +199,18 @@ npm install
 - `npm run format` - Format code using Biome
 - `npm run lint` - Lint code using Biome
 - `npm run test:build` - Test the built CLI
+- `npm run test:build:codex` - Test the built CLI with `katt-codex.json`
+- `npm run test:build:claude` - Test the built CLI with `katt-claude.json`
 
 ### Verification Process
 
 To verify your changes before opening a pull request, run:
 
-1. `npm test`
+1. `npm run format`
 2. `npm run typecheck`
-3. `npm run lint`
-4. `npm run format`
+3. `npm run test`
+4. `npm run build`
+5. `npm run test:build`
 
 For more details, see the [verification process section in CONTRIBUTING.md](./CONTRIBUTING.md#verification-process).
 ## How It Works
@@ -236,7 +255,7 @@ flowchart LR
   Config --> Runtime
   Runtime --> Assertions["Assertions + snapshots"]
   Runtime --> Prompts["prompt() / promptFile()"]
-  Prompts --> AI["AI runtime (GitHub Copilot or Codex CLI)"]
+  Prompts --> AI["AI runtime (GitHub Copilot, Codex CLI, or Claude Code CLI)"]
   Assertions --> Report["Terminal report + exit code"]
   AI --> Report
 ```
@@ -246,6 +265,7 @@ flowchart LR
 - Node.js
 - For `gh-copilot` runtime: access to GitHub Copilot with a logged-in user
 - For `codex` runtime: Codex CLI installed and authenticated (`codex login`)
+- For `claude-code` runtime: Claude Code CLI installed and authenticated
 
 ## License
 

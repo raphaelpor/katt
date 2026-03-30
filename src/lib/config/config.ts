@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { SessionConfig } from "@github/copilot-sdk";
 
-export type KattAgent = "gh-copilot" | "codex";
+export type KattAgent = "gh-copilot" | "codex" | "claude-code";
 
 type KattConfig = {
   agent?: unknown;
@@ -112,7 +112,7 @@ async function readKattConfig(): Promise<KattConfig | undefined> {
 }
 
 function readSupportedAgent(agent: unknown): KattAgent | undefined {
-  if (agent === "gh-copilot" || agent === "codex") {
+  if (agent === "gh-copilot" || agent === "codex" || agent === "claude-code") {
     return agent;
   }
 
