@@ -162,6 +162,19 @@ describe("getDefaultCopilotConfig", () => {
     expect(result).toBeUndefined();
   });
 
+  it("returns undefined when agent is claude-code", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "claude-code",
+        agentOptions: { model: "claude-sonnet-4" },
+      }),
+    );
+
+    const result = await getDefaultCopilotConfig();
+
+    expect(result).toBeUndefined();
+  });
+
   it("returns undefined when agentOptions is not an object", async () => {
     readFileMock.mockResolvedValue(
       JSON.stringify({
@@ -298,6 +311,30 @@ describe("getDefaultKattConfig", () => {
       agentOptions: {
         model: "gpt-5-codex",
         profile: "default",
+      },
+      promptTimeoutMs: 450000,
+    });
+  });
+
+  it("returns claude-code defaults when configured", async () => {
+    readFileMock.mockResolvedValue(
+      JSON.stringify({
+        agent: "claude-code",
+        agentOptions: {
+          model: "claude-sonnet-4",
+          permissionMode: "acceptEdits",
+        },
+        prompt: { timeoutMs: 450000 },
+      }),
+    );
+
+    const result = await getDefaultKattConfig();
+
+    expect(result).toEqual({
+      agent: "claude-code",
+      agentOptions: {
+        model: "claude-sonnet-4",
+        permissionMode: "acceptEdits",
       },
       promptTimeoutMs: 450000,
     });

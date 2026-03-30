@@ -12,13 +12,27 @@ import {
 } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
 import { getDefaultKattConfig } from "../config/config.js";
+import { runClaudeCodePrompt } from "./claudeCode.js";
 import { runCodexPrompt } from "./codex.js";
 
 export const DEFAULT_PROMPT_TIMEOUT_MS = 600_000;
 
-export type PromptOptions = Omit<SessionConfig, "onPermissionRequest"> & {
-  onPermissionRequest?: PermissionHandler;
-} & Record<string, unknown> & {
+export type ClaudeCodePromptOptions = {
+  model?: string;
+  permissionMode?: string;
+  dangerouslySkipPermissions?: boolean;
+  maxTurns?: number;
+  allowedTools?: string | string[];
+  disallowedTools?: string | string[];
+  appendSystemPrompt?: string;
+  mcpConfig?: string;
+  workingDirectory?: string;
+};
+
+export type PromptOptions = Omit<SessionConfig, "onPermissionRequest"> &
+  ClaudeCodePromptOptions & {
+    onPermissionRequest?: PermissionHandler;
+  } & Record<string, unknown> & {
     timeoutMs?: number;
   };
 
@@ -109,6 +123,20 @@ export async function prompt(
 
   if (defaults.agent === "codex") {
     const response = await runCodexPrompt(input, timeoutMs, sessionOptions);
+
+    if (model) {
+      setCurrentTestModel(model);
+    }
+
+    return response;
+  }
+
+  if (defaults.agent === "claude-code") {
+    const response = await runClaudeCodePrompt(
+      input,
+      timeoutMs,
+      sessionOptions,
+    );
 
     if (model) {
       setCurrentTestModel(model);

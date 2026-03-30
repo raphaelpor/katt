@@ -237,6 +237,7 @@ Katt runs as a Node.js CLI and executes prompts through a selectable runtime:
 
 - `gh-copilot` (default): GitHub Copilot via `@github/copilot-sdk`
 - `codex`: Codex via `codex exec`
+- `claude-code`: Claude Code via `claude -p`
 
 In practice that means your machine/CI runner should be configured for the
 runtime you choose in `katt.json`.
@@ -254,7 +255,7 @@ Katt’s core idea—**agentic workflows deserve tests**—is broader than any s
 
 Future directions that fit naturally with Katt’s model include:
 
-- **Additional runtimes/adapters**: first-class integrations for other agentic tools (for example Claude Code and others), so the same eval files can validate workflows across environments.
+- **Additional runtimes/adapters**: first-class integrations for more agentic tools, so the same eval files can validate workflows across environments.
 - **Better eval ergonomics**: more helpers to standardize prompts, assertions, and repeatable fixtures.
 
 These are intentionally framed as *roadmap ideas*: check the repo docs/specs for what’s supported today.

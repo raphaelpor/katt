@@ -38,7 +38,7 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
    - default: `<cwd>/katt.json`
    - CLI override: `--config-file <path>`
 2. Resolves active runtime:
-   - `gh-copilot` or `codex`
+   - `gh-copilot`, `codex`, or `claude-code`
    - defaults to `gh-copilot` when `agent` is missing/unsupported.
 3. Resolves runtime options:
    - merges config `agentOptions` (base) with explicit `options`
@@ -66,6 +66,14 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
         - `Error("Codex did not return a response.")` when no output is
           available
         - timeout/process errors when Codex fails to execute successfully.
+   - `claude-code`:
+     1. runs `claude -p` non-interactively with `--output-format json`
+     2. passes supported options as command flags
+     3. sends prompt through stdin
+     4. parses JSON response payload and extracts final result text
+     5. returns response text
+     6. throws for invalid/missing JSON output, missing result text, or
+        timeout/process failures.
 
 ### Cleanup guarantees for `prompt()`
 
@@ -77,6 +85,7 @@ Execution/discovery flow for eval files and CLI exit handling is specified in
      - `Copilot cleanup encountered <N> error(s).`
 - `codex` runtime always removes temporary output artifacts used for response
   extraction.
+- `claude-code` runtime has no temporary output artifact cleanup step.
 
 Cleanup logging does not replace the primary operation result/error.
 
@@ -95,6 +104,8 @@ Cleanup logging does not replace the primary operation result/error.
 - Copilot/session errors in `prompt()` are propagated to the caller.
 - Codex process startup/exit/timeout errors in `prompt()` are propagated to the
   caller.
+- Claude Code process startup/exit/timeout errors in `prompt()` are propagated
+  to the caller.
 - Missing response content in `prompt()` is converted to the explicit runtime
   errors defined above.
 

@@ -8,6 +8,7 @@ const addUsedTokensToCurrentTestMock = vi.fn();
 const setCurrentTestModelMock = vi.fn();
 const getDefaultKattConfigMock = vi.fn();
 const runCodexPromptMock = vi.fn();
+const runClaudeCodePromptMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFileMock(...args),
@@ -26,6 +27,10 @@ vi.mock("../config/config.js", () => ({
 
 vi.mock("./codex.js", () => ({
   runCodexPrompt: (...args: unknown[]) => runCodexPromptMock(...args),
+}));
+
+vi.mock("./claudeCode.js", () => ({
+  runClaudeCodePrompt: (...args: unknown[]) => runClaudeCodePromptMock(...args),
 }));
 
 let sendAndWaitMock: ReturnType<
@@ -71,6 +76,7 @@ function setupSessionMocks(
     promptTimeoutMs: undefined,
   });
   runCodexPromptMock.mockResolvedValue("codex response");
+  runClaudeCodePromptMock.mockResolvedValue("claude response");
   sendAndWaitMock = vi.fn().mockResolvedValue({ data: { content: "ok" } });
   destroyMock = destroyError
     ? vi.fn().mockRejectedValue(destroyError)
@@ -118,6 +124,7 @@ describe("prompt", () => {
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
     runCodexPromptMock.mockReset();
+    runClaudeCodePromptMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -351,6 +358,54 @@ describe("prompt", () => {
     );
     expect(setCurrentTestModelMock).toHaveBeenCalledWith("gpt-5.2-codex");
   });
+
+  it("uses Claude Code runtime when configured", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      agent: "claude-code",
+      agentOptions: { model: "claude-sonnet-4", permissionMode: "acceptEdits" },
+      promptTimeoutMs: 450000,
+    });
+    runClaudeCodePromptMock.mockResolvedValue("claude answer");
+
+    const result = await prompt("Hello");
+
+    expect(result).toBe("claude answer");
+    expect(runClaudeCodePromptMock).toHaveBeenCalledWith("Hello", 450000, {
+      model: "claude-sonnet-4",
+      permissionMode: "acceptEdits",
+    });
+    expect(createSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("lets explicit options override Claude Code defaults", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      agent: "claude-code",
+      agentOptions: {
+        model: "claude-sonnet-4",
+        permissionMode: "acceptEdits",
+      },
+      promptTimeoutMs: undefined,
+    });
+
+    await prompt("Hello", {
+      model: "claude-opus-4",
+      permissionMode: "plan",
+      maxTurns: 5,
+    });
+
+    expect(runClaudeCodePromptMock).toHaveBeenCalledWith(
+      "Hello",
+      DEFAULT_PROMPT_TIMEOUT_MS,
+      {
+        model: "claude-opus-4",
+        permissionMode: "plan",
+        maxTurns: 5,
+      },
+    );
+    expect(setCurrentTestModelMock).toHaveBeenCalledWith("claude-opus-4");
+  });
 });
 
 describe("promptFile", () => {
@@ -360,6 +415,7 @@ describe("promptFile", () => {
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
     runCodexPromptMock.mockReset();
+    runClaudeCodePromptMock.mockReset();
     vi.restoreAllMocks();
   });
 

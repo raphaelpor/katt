@@ -30,7 +30,8 @@
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:build": "node ./dist/katt.js",
-    "test:build:codex": "node ./dist/katt.js --config-file=./katt-codex.json"
+    "test:build:codex": "node ./dist/katt.js --config-file=./katt-codex.json",
+    "test:build:claude": "node ./dist/katt.js --config-file=./katt-claude.json"
   },
   "types": "dist/index.d.ts",
   "devDependencies": {
