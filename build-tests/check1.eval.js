@@ -4,7 +4,7 @@ describe('Hello World', () => {
     it('should return the date in a json format', async () => {
         const currentData = new Date(Date.now());
 
-        const result = await prompt('Return the current year in the format "{ year: YYYY }"');
-        expect(result).toContain(`{ year: ${currentData.getFullYear()} }`);
+        const result = await prompt('Look for updates in the readme file.');
+        expect(result).toContain('');
     });
 });

@@ -8,6 +8,9 @@ const addUsedTokensToCurrentTestMock = vi.fn();
 const setCurrentTestModelMock = vi.fn();
 const getDefaultKattConfigMock = vi.fn();
 const runCodexPromptMock = vi.fn();
+const runCodexPromptWithReasoningMock = vi.fn();
+const getSaveReasoningModeMock = vi.fn();
+const saveReasoningTraceMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFileMock(...args),
@@ -26,6 +29,17 @@ vi.mock("../config/config.js", () => ({
 
 vi.mock("./codex.js", () => ({
   runCodexPrompt: (...args: unknown[]) => runCodexPromptMock(...args),
+  runCodexPromptWithReasoning: (...args: unknown[]) =>
+    runCodexPromptWithReasoningMock(...args),
+}));
+
+vi.mock("./reasoningConfig.js", () => ({
+  getSaveReasoningMode: (...args: unknown[]) =>
+    getSaveReasoningModeMock(...args),
+}));
+
+vi.mock("./reasoningWriter.js", () => ({
+  saveReasoningTrace: (...args: unknown[]) => saveReasoningTraceMock(...args),
 }));
 
 let sendAndWaitMock: ReturnType<
@@ -47,7 +61,7 @@ let onMock: ReturnType<
   typeof vi.fn<
     (
       eventType: string,
-      handler: (event: { data: UsageData }) => void,
+      handler: (event: { data: Record<string, unknown> }) => void,
     ) => typeof unsubscribeMock
   >
 >;
@@ -64,6 +78,9 @@ function setupSessionMocks(
   usageEvents: UsageData[] = [],
   stopErrors: Error[] = [],
   destroyError?: Error,
+  reasoningEvents: string[] = [],
+  intentEvents: string[] = [],
+  responseReasoningText?: string,
 ) {
   getDefaultKattConfigMock.mockResolvedValue({
     agent: "gh-copilot",
@@ -71,7 +88,20 @@ function setupSessionMocks(
     promptTimeoutMs: undefined,
   });
   runCodexPromptMock.mockResolvedValue("codex response");
-  sendAndWaitMock = vi.fn().mockResolvedValue({ data: { content: "ok" } });
+  runCodexPromptWithReasoningMock.mockResolvedValue({
+    response: "codex response",
+    reasoning: "codex reasoning",
+  });
+  getSaveReasoningModeMock.mockReturnValue(false);
+  saveReasoningTraceMock.mockResolvedValue(undefined);
+  sendAndWaitMock = vi.fn().mockResolvedValue({
+    data: {
+      content: "ok",
+      ...(responseReasoningText
+        ? { reasoningText: responseReasoningText }
+        : {}),
+    },
+  });
   destroyMock = destroyError
     ? vi.fn().mockRejectedValue(destroyError)
     : vi.fn().mockResolvedValue(undefined);
@@ -79,10 +109,23 @@ function setupSessionMocks(
   stopMock = vi.fn().mockResolvedValue(stopErrors);
   unsubscribeMock = vi.fn();
   onMock = vi.fn(
-    (eventType: string, handler: (event: { data: UsageData }) => void) => {
+    (
+      eventType: string,
+      handler: (event: { data: Record<string, unknown> }) => void,
+    ) => {
       if (eventType === "assistant.usage") {
         for (const eventData of usageEvents) {
-          handler({ data: eventData });
+          handler({ data: eventData as unknown as Record<string, unknown> });
+        }
+      }
+      if (eventType === "assistant.reasoning") {
+        for (const reasoning of reasoningEvents) {
+          handler({ data: { content: reasoning } });
+        }
+      }
+      if (eventType === "assistant.intent") {
+        for (const intent of intentEvents) {
+          handler({ data: { intent } });
         }
       }
       return unsubscribeMock;
@@ -118,6 +161,9 @@ describe("prompt", () => {
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
     runCodexPromptMock.mockReset();
+    runCodexPromptWithReasoningMock.mockReset();
+    getSaveReasoningModeMock.mockReset();
+    saveReasoningTraceMock.mockReset();
     vi.restoreAllMocks();
   });
 
@@ -135,7 +181,7 @@ describe("prompt", () => {
     expect(createSessionMock).toHaveBeenCalledTimes(1);
     expect(destroyMock).toHaveBeenCalledTimes(1);
     expect(stopMock).toHaveBeenCalledTimes(1);
-    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(unsubscribeMock).toHaveBeenCalledTimes(3);
   });
 
   it("passes the model to Copilot session creation when provided", async () => {
@@ -328,6 +374,8 @@ describe("prompt", () => {
       model: "gpt-5-codex",
       profile: "default",
     });
+    expect(runCodexPromptWithReasoningMock).not.toHaveBeenCalled();
+    expect(saveReasoningTraceMock).not.toHaveBeenCalled();
     expect(createSessionMock).not.toHaveBeenCalled();
   });
 
@@ -349,7 +397,78 @@ describe("prompt", () => {
         profile: "fast",
       },
     );
+    expect(runCodexPromptWithReasoningMock).not.toHaveBeenCalled();
     expect(setCurrentTestModelMock).toHaveBeenCalledWith("gpt-5.2-codex");
+  });
+
+  it("saves copilot reasoning when save mode is enabled", async () => {
+    setupSessionMocks(
+      [],
+      [],
+      undefined,
+      ["first reasoning block"],
+      ["planning next step"],
+      "final reasoning text",
+    );
+    getSaveReasoningModeMock.mockReturnValue(true);
+
+    await prompt("Hello");
+
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith(
+      "gh-copilot",
+      expect.stringContaining("Intent: planning next step"),
+      "ok",
+    );
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith(
+      "gh-copilot",
+      expect.stringContaining("first reasoning block"),
+      "ok",
+    );
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith(
+      "gh-copilot",
+      expect.stringContaining("final reasoning text"),
+      "ok",
+    );
+  });
+
+  it("saves an empty copilot reasoning payload when no reasoning is emitted", async () => {
+    setupSessionMocks();
+    getSaveReasoningModeMock.mockReturnValue(true);
+
+    await prompt("Hello");
+
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith("gh-copilot", "", "ok");
+  });
+
+  it("uses codex reasoning capture when save mode is enabled", async () => {
+    setupSessionMocks();
+    getDefaultKattConfigMock.mockResolvedValue({
+      agent: "codex",
+      agentOptions: { model: "gpt-5-codex" },
+      promptTimeoutMs: 450000,
+    });
+    getSaveReasoningModeMock.mockReturnValue(true);
+    runCodexPromptWithReasoningMock.mockResolvedValue({
+      response: "codex answer",
+      reasoning: "codex reasoning trace",
+    });
+
+    const result = await prompt("Hello");
+
+    expect(result).toBe("codex answer");
+    expect(runCodexPromptWithReasoningMock).toHaveBeenCalledWith(
+      "Hello",
+      450000,
+      {
+        model: "gpt-5-codex",
+      },
+    );
+    expect(runCodexPromptMock).not.toHaveBeenCalled();
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith(
+      "codex",
+      "codex reasoning trace",
+      "codex answer",
+    );
   });
 });
 
@@ -360,6 +479,9 @@ describe("promptFile", () => {
     setCurrentTestModelMock.mockReset();
     getDefaultKattConfigMock.mockReset();
     runCodexPromptMock.mockReset();
+    runCodexPromptWithReasoningMock.mockReset();
+    getSaveReasoningModeMock.mockReset();
+    saveReasoningTraceMock.mockReset();
     vi.restoreAllMocks();
   });
 

@@ -12,6 +12,7 @@ const {
   mockCyanBold,
   mockDisplayBanner,
   mockSetSnapshotUpdateMode,
+  mockSetSaveReasoningMode,
   mockSetKattConfigFilePath,
   mockGetIgnorePatterns,
 } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ const {
   mockCyanBold: vi.fn((value: string) => `[${value}]`),
   mockDisplayBanner: vi.fn(),
   mockSetSnapshotUpdateMode: vi.fn(),
+  mockSetSaveReasoningMode: vi.fn(),
   mockSetKattConfigFilePath: vi.fn(),
   mockGetIgnorePatterns: vi.fn(),
 }));
@@ -60,6 +62,10 @@ vi.mock("../lib/expect/snapshotConfig.js", () => ({
   setSnapshotUpdateMode: mockSetSnapshotUpdateMode,
 }));
 
+vi.mock("../lib/prompt/reasoningConfig.js", () => ({
+  setSaveReasoningMode: mockSetSaveReasoningMode,
+}));
+
 vi.mock("../lib/config/config.js", () => ({
   setKattConfigFilePath: mockSetKattConfigFilePath,
   getIgnorePatterns: mockGetIgnorePatterns,
@@ -87,6 +93,7 @@ describe("runCli", () => {
     mockCyanBold.mockClear();
     mockDisplayBanner.mockReset();
     mockSetSnapshotUpdateMode.mockReset();
+    mockSetSaveReasoningMode.mockReset();
     mockSetKattConfigFilePath.mockReset();
     mockGetIgnorePatterns.mockReset();
 
@@ -116,6 +123,7 @@ describe("runCli", () => {
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(false);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(logSpy).toHaveBeenCalledWith("No .eval.js or .eval.ts files found.");
   });
 
@@ -134,10 +142,14 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockSetSaveReasoningMode).not.toHaveBeenCalled();
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockFindEvalFiles).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("-h, --help"));
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("--save-reasoning"),
+    );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining("--config-file PATH"),
     );
@@ -158,6 +170,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockSetSaveReasoningMode).not.toHaveBeenCalled();
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockFindEvalFiles).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
@@ -180,9 +193,28 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(true);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
     expect(logSpy).toHaveBeenCalled();
+  });
+
+  it("enables reasoning save mode when --save-reasoning is passed", async () => {
+    mockFindEvalFiles.mockResolvedValue(["/tmp/a.eval.ts"]);
+    mockEvalFileRun.mockResolvedValue(undefined);
+
+    const originalArgv = process.argv;
+    let exitCode = 1;
+    try {
+      process.argv = ["node", "katt", "--save-reasoning"];
+      exitCode = await runCli();
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(mockSetSnapshotUpdateMode).toHaveBeenCalledWith(false);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(true);
   });
 
   it("uses custom config file from --config-file", async () => {
@@ -201,6 +233,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
   });
 
   it("uses custom config file from --config-file=<path>", async () => {
@@ -219,6 +252,7 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith("./custom.json");
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
   });
 
   it("returns 1 when --config-file is provided without value", async () => {
@@ -237,6 +271,7 @@ describe("runCli", () => {
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockSetSnapshotUpdateMode).not.toHaveBeenCalled();
+    expect(mockSetSaveReasoningMode).not.toHaveBeenCalled();
     expect(mockFindEvalFiles).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledWith("Missing value for --config-file.");
   });
@@ -253,6 +288,7 @@ describe("runCli", () => {
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing /tmp/a.eval.ts: Error: boom"),
     );
@@ -276,6 +312,7 @@ describe("runCli", () => {
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Error executing async test: Error: async boom"),
     );
@@ -300,6 +337,7 @@ describe("runCli", () => {
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(errorSpy).toHaveBeenCalledWith("❌ Failed tests:");
     expect(errorSpy).toHaveBeenCalledWith(
       "1. suite > nested > case: expected x to include y",
@@ -319,6 +357,7 @@ describe("runCli", () => {
     expect(mockDisplayBanner).toHaveBeenCalledTimes(1);
     expect(mockSetKattConfigFilePath).toHaveBeenCalledWith(undefined);
     expect(mockGetIgnorePatterns).toHaveBeenCalledTimes(1);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
     expect(mockEvalFileRun).toHaveBeenCalledTimes(2);
     expect(mockEvalFileRun).toHaveBeenNthCalledWith(
       1,
@@ -344,5 +383,6 @@ describe("runCli", () => {
     expect(mockFindEvalFiles).toHaveBeenCalledWith(process.cwd(), [
       "/tmp/ignore/**",
     ]);
+    expect(mockSetSaveReasoningMode).toHaveBeenCalledWith(false);
   });
 });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runCodexPrompt } from "./codex.js";
+import { runCodexPrompt, runCodexPromptWithReasoning } from "./codex.js";
 import type { ChildProcess } from "node:child_process";
 import type { EventEmitter } from "node:events";
 
@@ -493,5 +493,76 @@ describe("runCodexPrompt", () => {
     expect(args).not.toContain("--model");
     expect(args).not.toContain("--profile");
     expect(args).not.toContain("--sandbox");
+  });
+
+  it("enables json output when reasoning capture is requested", async () => {
+    setupSuccessfulCodex("response");
+
+    await runCodexPromptWithReasoning("test prompt", 30000, undefined);
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      "codex",
+      expect.arrayContaining(["--json"]),
+      expect.anything(),
+    );
+  });
+
+  it("returns captured reasoning segments from codex json output", async () => {
+    const jsonOutput = [
+      '{"id":"0","msg":{"type":"assistant_intent","intent":"Investigating the task"}}',
+      '{"id":"0","msg":{"type":"assistant_reasoning","content":"I should inspect the code first"}}',
+      '{"id":"0","msg":{"type":"agent_message","message":"Final answer"}}',
+    ].join("\n");
+    setupSuccessfulCodex("Final answer", jsonOutput);
+
+    const result = await runCodexPromptWithReasoning(
+      "test prompt",
+      30000,
+      undefined,
+    );
+
+    expect(result).toEqual({
+      response: "Final answer",
+      reasoning: [
+        "Investigating the task",
+        "I should inspect the code first",
+      ].join("\n\n"),
+    });
+  });
+
+  it("returns empty reasoning when codex emits no reasoning events", async () => {
+    const jsonOutput = [
+      '{"provider":"openai"}',
+      '{"id":"0","msg":{"type":"agent_message","message":"Final answer"}}',
+    ].join("\n");
+    setupSuccessfulCodex("Final answer", jsonOutput);
+
+    const result = await runCodexPromptWithReasoning(
+      "test prompt",
+      30000,
+      undefined,
+    );
+
+    expect(result.response).toBe("Final answer");
+    expect(result.reasoning).toBe("");
+  });
+
+  it("extracts final response from json stdout when output file is missing in reasoning mode", async () => {
+    const jsonOutput = [
+      '{"provider":"openai"}',
+      '{"id":"0","msg":{"type":"assistant_reasoning","content":"Thinking..."}}',
+      '{"id":"0","msg":{"type":"agent_message","message":"Response from json stream"}}',
+    ].join("\n");
+    // Pass undefined as outputFileContent so readFile throws ENOENT
+    setupSuccessfulCodex(undefined, jsonOutput);
+
+    const result = await runCodexPromptWithReasoning(
+      "test prompt",
+      30000,
+      undefined,
+    );
+
+    expect(result.response).toBe("Response from json stream");
+    expect(result.reasoning).toBe("Thinking...");
   });
 });
