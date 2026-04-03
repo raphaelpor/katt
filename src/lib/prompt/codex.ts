@@ -306,6 +306,35 @@ function extractReasoningFromStdout(stdout: string): string {
   return segments.join("\n\n");
 }
 
+function extractFinalMessageFromJsonStdout(stdout: string): string {
+  const lines = stdout.split(/\r?\n/);
+  let lastMessage = "";
+
+  for (const line of lines) {
+    if (line.trim().length === 0) {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(line) as unknown;
+      if (!isRecord(parsed)) {
+        continue;
+      }
+
+      if (isRecord(parsed.msg) && toText(parsed.msg.type) === "agent_message") {
+        const message = toText(parsed.msg.message);
+        if (message) {
+          lastMessage = message;
+        }
+      }
+    } catch {
+      // ignore invalid JSON lines
+    }
+  }
+
+  return lastMessage;
+}
+
 async function runCodexPromptInternal(
   input: string,
   timeoutMs: number,
@@ -336,7 +365,10 @@ async function runCodexPromptInternal(
       throw new Error(buildProcessFailureMessage(result));
     }
 
-    const response = await readCodexOutput(outputFilePath, result.stdout);
+    const fallback = includeReasoning
+      ? extractFinalMessageFromJsonStdout(result.stdout)
+      : result.stdout;
+    const response = await readCodexOutput(outputFilePath, fallback);
     if (response.length === 0) {
       throw new Error("Codex did not return a response.");
     }

@@ -546,4 +546,23 @@ describe("runCodexPrompt", () => {
     expect(result.response).toBe("Final answer");
     expect(result.reasoning).toBe("");
   });
+
+  it("extracts final response from json stdout when output file is missing in reasoning mode", async () => {
+    const jsonOutput = [
+      '{"provider":"openai"}',
+      '{"id":"0","msg":{"type":"assistant_reasoning","content":"Thinking..."}}',
+      '{"id":"0","msg":{"type":"agent_message","message":"Response from json stream"}}',
+    ].join("\n");
+    // Pass undefined as outputFileContent so readFile throws ENOENT
+    setupSuccessfulCodex(undefined, jsonOutput);
+
+    const result = await runCodexPromptWithReasoning(
+      "test prompt",
+      30000,
+      undefined,
+    );
+
+    expect(result.response).toBe("Response from json stream");
+    expect(result.reasoning).toBe("Thinking...");
+  });
 });
