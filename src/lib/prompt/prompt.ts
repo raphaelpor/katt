@@ -120,7 +120,11 @@ export async function prompt(
       if (model) {
         setCurrentTestModel(model);
       }
-      await saveReasoningTrace("codex", codexResult.reasoning);
+      await saveReasoningTrace(
+        "codex",
+        codexResult.reasoning,
+        codexResult.response,
+      );
       return codexResult.response;
     }
 
@@ -185,7 +189,11 @@ export async function prompt(
       ) {
         segments.push(response.data.reasoningText);
       }
-      await saveReasoningTrace("gh-copilot", segments.join("\n\n"));
+      await saveReasoningTrace(
+        "gh-copilot",
+        segments.join("\n\n"),
+        response.data.content,
+      );
     }
 
     if (model) {

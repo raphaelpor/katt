@@ -5,6 +5,8 @@ import { evalFileStorage } from "../context/evalFileContext.js";
 
 const NO_REASONING_PLACEHOLDER =
   "No reasoning was emitted by the runtime for this prompt.";
+const NO_FINAL_OUTPUT_PLACEHOLDER =
+  "No final output was returned by the runtime for this prompt.";
 
 function sanitizeReasoningSegment(segment: string): string {
   const normalized = segment
@@ -49,10 +51,29 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-function buildReasoningContent(runtime: string, reasoning: string): string {
-  const body =
+function buildReasoningContent(
+  runtime: string,
+  reasoning: string,
+  finalOutput: string,
+): string {
+  const reasoningBody =
     reasoning.trim().length > 0 ? reasoning : NO_REASONING_PLACEHOLDER;
-  return [`# Reasoning`, "", `Runtime: ${runtime}`, "", body, ""].join("\n");
+  const finalOutputBody =
+    finalOutput.trim().length > 0 ? finalOutput : NO_FINAL_OUTPUT_PLACEHOLDER;
+  return [
+    "# Reasoning",
+    "",
+    `Runtime: ${runtime}`,
+    "",
+    "## Reasoning Trace",
+    "",
+    reasoningBody,
+    "",
+    "## Final Output",
+    "",
+    finalOutputBody,
+    "",
+  ].join("\n");
 }
 
 function getBaseReasoningFilePath(evalFilePath: string): string {
@@ -75,6 +96,7 @@ function addTimestampToReasoningFilePath(filePath: string): string {
 export async function saveReasoningTrace(
   runtime: string,
   reasoning: string,
+  finalOutput: string,
 ): Promise<string | undefined> {
   const evalFilePath = evalFileStorage.getStore()?.evalFile;
   if (!evalFilePath) {
@@ -88,10 +110,10 @@ export async function saveReasoningTrace(
     : baseFilePath;
   await writeFile(
     targetFilePath,
-    buildReasoningContent(runtime, reasoning),
+    buildReasoningContent(runtime, reasoning, finalOutput),
     "utf8",
   );
   return targetFilePath;
 }
 
-export { NO_REASONING_PLACEHOLDER };
+export { NO_REASONING_PLACEHOLDER, NO_FINAL_OUTPUT_PLACEHOLDER };

@@ -278,6 +278,9 @@ Behavior:
   - Example: `greeting.eval.ts` with `describe("Greeting agent")` and `it("should say hello")` saves to `__reasoning__/greeting__Greeting_agent__should_say_hello.reasoning.md`
   - If that file already exists, Katt writes a timestamped file instead:
     `__reasoning__/greeting__Greeting_agent__should_say_hello__20240601T120000.reasoning.md`
+  - The saved file contains both:
+    - Reasoning trace emitted by the runtime
+    - Final output returned by the runtime
   - When a runtime emits no reasoning, the file still contains:
     `No reasoning was emitted by the runtime for this prompt.`
 

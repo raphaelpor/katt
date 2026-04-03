@@ -10,6 +10,7 @@ import {
 } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
 import {
+  NO_FINAL_OUTPUT_PLACEHOLDER,
   NO_REASONING_PLACEHOLDER,
   saveReasoningTrace,
 } from "./reasoningWriter.js";
@@ -39,7 +40,7 @@ describe("saveReasoningTrace", () => {
       async () => {
         pushDescribe("Greeting agent");
         pushIt("should say hello");
-        return saveReasoningTrace("codex", "step 1");
+        return saveReasoningTrace("codex", "step 1", "hello");
       },
     );
 
@@ -47,7 +48,10 @@ describe("saveReasoningTrace", () => {
     const content = await readFile(expectedPath, "utf8");
     expect(content).toContain("# Reasoning");
     expect(content).toContain("Runtime: codex");
+    expect(content).toContain("## Reasoning Trace");
     expect(content).toContain("step 1");
+    expect(content).toContain("## Final Output");
+    expect(content).toContain("hello");
   });
 
   it("uses root when there is no describe/it context", async () => {
@@ -61,7 +65,7 @@ describe("saveReasoningTrace", () => {
 
     const actualPath = await evalFileStorage.run(
       { evalFile: evalFilePath },
-      async () => saveReasoningTrace("gh-copilot", "reasoning text"),
+      async () => saveReasoningTrace("gh-copilot", "reasoning text", "hi"),
     );
 
     expect(actualPath).toBe(expectedPath);
@@ -88,7 +92,7 @@ describe("saveReasoningTrace", () => {
 
     const actualPath = await evalFileStorage.run(
       { evalFile: evalFilePath },
-      async () => saveReasoningTrace("codex", "new reasoning"),
+      async () => saveReasoningTrace("codex", "new reasoning", "new output"),
     );
 
     expect(actualPath).toBe(timestampedPath);
@@ -110,7 +114,7 @@ describe("saveReasoningTrace", () => {
       async () => {
         pushDescribe("Greeting/agent");
         pushIt("should:say*hello");
-        return saveReasoningTrace("codex", "reasoning");
+        return saveReasoningTrace("codex", "reasoning", "output");
       },
     );
 
@@ -129,7 +133,7 @@ describe("saveReasoningTrace", () => {
     );
 
     await evalFileStorage.run({ evalFile: evalFilePath }, async () => {
-      await saveReasoningTrace("codex", "   ");
+      await saveReasoningTrace("codex", "   ", "final output");
     });
 
     expect(await readFile(expectedPath, "utf8")).toContain(
@@ -137,9 +141,29 @@ describe("saveReasoningTrace", () => {
     );
   });
 
+  it("writes a placeholder when final output content is empty", async () => {
+    const tempDir = await mkdtemp(
+      join(tmpdir(), "katt-reasoning-output-placeholder-"),
+    );
+    const evalFilePath = join(tempDir, "greeting.eval.ts");
+    const expectedPath = join(
+      tempDir,
+      "__reasoning__",
+      "greeting__root.reasoning.md",
+    );
+
+    await evalFileStorage.run({ evalFile: evalFilePath }, async () => {
+      await saveReasoningTrace("codex", "reasoning", "   ");
+    });
+
+    expect(await readFile(expectedPath, "utf8")).toContain(
+      NO_FINAL_OUTPUT_PLACEHOLDER,
+    );
+  });
+
   it("does nothing outside eval file context", async () => {
     await expect(
-      saveReasoningTrace("codex", "reasoning"),
+      saveReasoningTrace("codex", "reasoning", "output"),
     ).resolves.toBeUndefined();
   });
 });

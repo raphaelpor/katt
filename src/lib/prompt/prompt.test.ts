@@ -417,14 +417,17 @@ describe("prompt", () => {
     expect(saveReasoningTraceMock).toHaveBeenCalledWith(
       "gh-copilot",
       expect.stringContaining("Intent: planning next step"),
+      "ok",
     );
     expect(saveReasoningTraceMock).toHaveBeenCalledWith(
       "gh-copilot",
       expect.stringContaining("first reasoning block"),
+      "ok",
     );
     expect(saveReasoningTraceMock).toHaveBeenCalledWith(
       "gh-copilot",
       expect.stringContaining("final reasoning text"),
+      "ok",
     );
   });
 
@@ -434,7 +437,7 @@ describe("prompt", () => {
 
     await prompt("Hello");
 
-    expect(saveReasoningTraceMock).toHaveBeenCalledWith("gh-copilot", "");
+    expect(saveReasoningTraceMock).toHaveBeenCalledWith("gh-copilot", "", "ok");
   });
 
   it("uses codex reasoning capture when save mode is enabled", async () => {
@@ -464,6 +467,7 @@ describe("prompt", () => {
     expect(saveReasoningTraceMock).toHaveBeenCalledWith(
       "codex",
       "codex reasoning trace",
+      "codex answer",
     );
   });
 });
