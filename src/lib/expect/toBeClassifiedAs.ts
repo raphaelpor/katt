@@ -12,7 +12,7 @@ const DEFAULT_THRESHOLD = 3;
 
 function extractScore(evaluation: string): number | null {
   const match = evaluation.match(/\b([1-5])\b/);
-  if (!match || !match[1]) {
+  if (!match?.[1]) {
     return null;
   }
   return Number(match[1]);

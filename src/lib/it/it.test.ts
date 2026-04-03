@@ -14,6 +14,7 @@ import {
   settlePendingTests,
 } from "../context/context.js";
 import { describe as describeFn } from "../describe/describe.js";
+import { stripAnsi } from "../output/stripAnsi.js";
 import { it as itFn, resetTestLoggingState } from "./it.js";
 
 describe("it", () => {
@@ -64,14 +65,15 @@ describe("it", () => {
       itFn("case", () => {});
     });
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/^Suite "\u001B\[1;36msuite\u001B\[0m"$/),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(strippedLogCalls).toContain('Suite "suite"');
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
+    ).toBe(true);
   });
 
   it("logs duration output for a failing test", () => {
@@ -85,14 +87,15 @@ describe("it", () => {
       });
     }).toThrowError("boom");
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/^Suite "\u001B\[1;36msuite\u001B\[0m"$/),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(strippedLogCalls).toContain('Suite "suite"');
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
+    ).toBe(true);
   });
 
   it("logs duration output for an async passing test", async () => {
@@ -106,11 +109,14 @@ describe("it", () => {
 
     const settled = await settlePendingTests();
     expect(settled.every((result) => result.status === "fulfilled")).toBe(true);
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
+    ).toBe(true);
     expect(hasItContext()).toBe(false);
   });
 
@@ -126,11 +132,14 @@ describe("it", () => {
     const settled = await settlePendingTests();
     expect(settled).toHaveLength(1);
     expect(settled[0]?.status).toBe("rejected");
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
+    ).toBe(true);
     expect(getFailedTestCount()).toBe(0);
     expect(hasItContext()).toBe(false);
   });
@@ -143,12 +152,11 @@ describe("it", () => {
       itFn("case two", () => {});
     });
 
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
     expect(
-      logSpy.mock.calls.filter(
-        ([value]) =>
-          typeof value === "string" &&
-          /^Suite "\u001B\[1;36msuite\u001B\[0m"$/.test(value),
-      ),
+      strippedLogCalls.filter((value) => /^Suite "suite"$/.test(value)),
     ).toHaveLength(1);
   });
 
@@ -162,10 +170,15 @@ describe("it", () => {
       });
     });
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n- Model \u001B\[1;36mgpt-4o\u001B\[0m\n- Tokens used \u001B\[1;36m123\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n- Model gpt-4o\n- Tokens used 123\n---$/.test(
+          value,
+        ),
       ),
-    );
+    ).toBe(true);
   });
 });

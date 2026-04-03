@@ -5,10 +5,30 @@ import { evalFileStorage } from "../context/evalFileContext.js";
 import { registerFailure } from "./matcherUtils.js";
 import { getSnapshotUpdateMode } from "./snapshotConfig.js";
 
+const INVALID_SEGMENT_CHARACTERS = new Set([
+  "<",
+  ">",
+  ":",
+  '"',
+  "/",
+  "\\",
+  "|",
+  "?",
+  "*",
+]);
+
 function sanitizeSnapshotSegment(segment: string): string {
   const normalized = segment
     .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .split("")
+    .map((character) => {
+      const characterCode = character.charCodeAt(0);
+      if (characterCode <= 31 || INVALID_SEGMENT_CHARACTERS.has(character)) {
+        return "_";
+      }
+      return character;
+    })
+    .join("")
     .replace(/\s+/g, "_");
   return normalized.length > 0 ? normalized : "unnamed";
 }

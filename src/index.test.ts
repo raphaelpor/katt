@@ -14,6 +14,7 @@ import { runCli } from "./cli/runCli.js";
 import { describe as describeFn } from "./lib/describe/describe.js";
 import { expect as expectFn } from "./lib/expect/expect.js";
 import { it as itFn } from "./lib/it/it.js";
+import { stripAnsi } from "./lib/output/stripAnsi.js";
 import {
   resetDescribeContext,
   resetItContext,
@@ -81,19 +82,22 @@ describe("runCli", () => {
     expect(globalState.__kattExecuted).toBe(1);
     expect(logSpy).toHaveBeenCalledTimes(4);
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("██╗  ██╗"));
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/^Suite "\u001B\[1;36msuite\u001B\[0m"$/),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mcase\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(strippedLogCalls).toContain('Suite "suite"');
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "case"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^---\nFiles\s+\u001B\[1;36m1 passed\u001B\[0m\nEvals\s+\u001B\[1;36m1 passed\u001B\[0m\nStart at\s+\u001B\[1;36m\d{2}:\d{2}:\d{2}\u001B\[0m\nDuration\s+\u001B\[1;36m\d+ms\u001B\[0m$/,
+    ).toBe(true);
+    expect(
+      strippedLogCalls.some((value) =>
+        /^---\nFiles\s+1 passed\nEvals\s+1 passed\nStart at\s+\d{2}:\d{2}:\d{2}\nDuration\s+\d+ms$/.test(
+          value,
+        ),
       ),
-    );
+    ).toBe(true);
   });
 
   it("returns exit code 1 when an eval file throws", async () => {

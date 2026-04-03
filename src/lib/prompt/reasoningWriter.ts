@@ -7,11 +7,30 @@ const NO_REASONING_PLACEHOLDER =
   "No reasoning was emitted by the runtime for this prompt.";
 const NO_FINAL_OUTPUT_PLACEHOLDER =
   "No final output was returned by the runtime for this prompt.";
+const INVALID_SEGMENT_CHARACTERS = new Set([
+  "<",
+  ">",
+  ":",
+  '"',
+  "/",
+  "\\",
+  "|",
+  "?",
+  "*",
+]);
 
 function sanitizeReasoningSegment(segment: string): string {
   const normalized = segment
     .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .split("")
+    .map((character) => {
+      const characterCode = character.charCodeAt(0);
+      if (characterCode <= 31 || INVALID_SEGMENT_CHARACTERS.has(character)) {
+        return "_";
+      }
+      return character;
+    })
+    .join("")
     .replace(/\s+/g, "_");
   return normalized.length > 0 ? normalized : "unnamed";
 }

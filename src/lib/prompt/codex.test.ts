@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCodexPrompt, runCodexPromptWithReasoning } from "./codex.js";
-import type { ChildProcess } from "node:child_process";
 import type { EventEmitter } from "node:events";
 
 const spawnMock = vi.fn();

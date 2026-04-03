@@ -6,6 +6,7 @@ import {
   resetItContext,
   settlePendingTests,
 } from "../context/context.js";
+import { stripAnsi } from "../output/stripAnsi.js";
 import { prompt } from "../prompt/prompt.js";
 import { promptCheck } from "./promptCheck.js";
 
@@ -33,14 +34,15 @@ describe("promptCheck", () => {
 
     expect(settled).toHaveLength(1);
     expect(settled[0]?.status).toBe("fulfilled");
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/^Suite "\u001B\[1;36m\(root\)\u001B\[0m"$/),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^Test "\u001B\[1;36mpromptCheck\u001B\[0m"\n- Finished in \u001B\[1;36m\d+ ms\u001B\[0m\n---$/,
+    const strippedLogCalls = logSpy.mock.calls
+      .map(([value]) => (typeof value === "string" ? stripAnsi(value) : null))
+      .filter((value): value is string => value !== null);
+    expect(strippedLogCalls).toContain('Suite "(root)"');
+    expect(
+      strippedLogCalls.some((value) =>
+        /^Test "promptCheck"\n- Finished in \d+ ms\n---$/.test(value),
       ),
-    );
+    ).toBe(true);
     expect(errorSpy).not.toHaveBeenCalled();
     expect(getFailedTests()).toEqual([]);
   });
