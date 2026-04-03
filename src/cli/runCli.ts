@@ -12,6 +12,7 @@ import { evalFileStorage } from "../lib/context/evalFileContext.js";
 import { cyanBold } from "../lib/output/color.js";
 import { displayBanner } from "./banner.js";
 import { setSnapshotUpdateMode } from "../lib/expect/snapshotConfig.js";
+import { setSaveReasoningMode } from "../lib/prompt/reasoningConfig.js";
 import {
   getIgnorePatterns,
   setKattConfigFilePath,
@@ -33,6 +34,7 @@ function displayHelp(): void {
       "Options:",
       "  -h, --help              Show CLI usage information",
       "  -u, --update-snapshots  Update snapshot files on mismatch",
+      "      --save-reasoning    Save runtime reasoning to per-prompt files",
       "      --config-file PATH  Use a custom config file instead of katt.json",
     ].join("\n"),
   );
@@ -91,6 +93,8 @@ export async function runCli(): Promise<number> {
   const shouldUpdateSnapshots =
     args.includes("--update-snapshots") || args.includes("-u");
   setSnapshotUpdateMode(shouldUpdateSnapshots);
+  const shouldSaveReasoning = args.includes("--save-reasoning");
+  setSaveReasoningMode(shouldSaveReasoning);
 
   displayBanner();
   const startTime = new Date();

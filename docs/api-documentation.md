@@ -37,6 +37,7 @@ This document lists the currently available Katt features and how to use them.
 - Configurable prompt timeout with a safer long-task default
 - Automatic discovery and execution of `*.eval.js` and `*.eval.ts`
 - Concurrent eval-file execution
+- Optional reasoning trace persistence via `--save-reasoning`
 - Test summary, token usage tracking, and non-zero exit on failure
 
 ## Imports
@@ -243,6 +244,7 @@ Behavior:
 
 - `-h`, `--help`: prints usage and option information, then exits with code `0`
 - `-u`, `--update-snapshots`: updates snapshot files on mismatch
+- `--save-reasoning`: saves per-prompt reasoning traces as markdown files
 - `--config-file <path>`: use a custom config file instead of `<cwd>/katt.json`
   - Missing value causes exit code `1`
 
@@ -271,6 +273,13 @@ Behavior:
   - `Evals       <cyan bold Y passed>`
   - `Start at    <cyan bold HH:MM:SS>`
   - `Duration    <cyan bold Zms>`
+- With `--save-reasoning`, each prompt call saves reasoning to:
+  - `__reasoning__/<evalFileName>__<describePath>__<itPath>.reasoning.md`
+  - Example: `greeting.eval.ts` with `describe("Greeting agent")` and `it("should say hello")` saves to `__reasoning__/greeting__Greeting_agent__should_say_hello.reasoning.md`
+  - If that file already exists, Katt writes a timestamped file instead:
+    `__reasoning__/greeting__Greeting_agent__should_say_hello__20240601T120000.reasoning.md`
+  - When a runtime emits no reasoning, the file still contains:
+    `No reasoning was emitted by the runtime for this prompt.`
 
 Run:
 

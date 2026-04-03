@@ -12,7 +12,9 @@ import {
 } from "../context/context.js";
 import { evalFileStorage } from "../context/evalFileContext.js";
 import { getDefaultKattConfig } from "../config/config.js";
-import { runCodexPrompt } from "./codex.js";
+import { runCodexPrompt, runCodexPromptWithReasoning } from "./codex.js";
+import { getSaveReasoningMode } from "./reasoningConfig.js";
+import { saveReasoningTrace } from "./reasoningWriter.js";
 
 export const DEFAULT_PROMPT_TIMEOUT_MS = 600_000;
 
@@ -106,8 +108,22 @@ export async function prompt(
       ? sessionOptions.model
       : undefined,
   );
+  const saveReasoning = getSaveReasoningMode();
 
   if (defaults.agent === "codex") {
+    if (saveReasoning) {
+      const codexResult = await runCodexPromptWithReasoning(
+        input,
+        timeoutMs,
+        sessionOptions,
+      );
+      if (model) {
+        setCurrentTestModel(model);
+      }
+      await saveReasoningTrace("codex", codexResult.reasoning);
+      return codexResult.response;
+    }
+
     const response = await runCodexPrompt(input, timeoutMs, sessionOptions);
 
     if (model) {
@@ -120,7 +136,11 @@ export async function prompt(
   const client = new CopilotClient({ useLoggedInUser: true });
   let session: CopilotSession | undefined;
   let unsubscribeUsage: (() => void) | undefined;
+  let unsubscribeReasoning: (() => void) | undefined;
+  let unsubscribeIntent: (() => void) | undefined;
   let usedTokens = 0;
+  const reasoningEvents: string[] = [];
+  const intentEvents: string[] = [];
 
   try {
     await client.start();
@@ -131,10 +151,41 @@ export async function prompt(
     unsubscribeUsage = session.on("assistant.usage", (event) => {
       usedTokens += getUsageTokens(event.data);
     });
+    unsubscribeReasoning = session.on("assistant.reasoning", (event) => {
+      if (
+        typeof event.data.content === "string" &&
+        event.data.content.length > 0
+      ) {
+        reasoningEvents.push(event.data.content);
+      }
+    });
+    unsubscribeIntent = session.on("assistant.intent", (event) => {
+      if (
+        typeof event.data.intent === "string" &&
+        event.data.intent.length > 0
+      ) {
+        intentEvents.push(event.data.intent);
+      }
+    });
     const response = await session.sendAndWait({ prompt: input }, timeoutMs);
 
     if (!response?.data?.content) {
       throw new Error("Copilot did not return a response.");
+    }
+
+    if (saveReasoning) {
+      const segments: string[] = [];
+      for (const intent of intentEvents) {
+        segments.push(`Intent: ${intent}`);
+      }
+      segments.push(...reasoningEvents);
+      if (
+        typeof response.data.reasoningText === "string" &&
+        response.data.reasoningText.length > 0
+      ) {
+        segments.push(response.data.reasoningText);
+      }
+      await saveReasoningTrace("gh-copilot", segments.join("\n\n"));
     }
 
     if (model) {
@@ -145,6 +196,8 @@ export async function prompt(
   } finally {
     const cleanupErrors: unknown[] = [];
     unsubscribeUsage?.();
+    unsubscribeReasoning?.();
+    unsubscribeIntent?.();
 
     if (usedTokens > 0) {
       addUsedTokensToCurrentTest(usedTokens);
