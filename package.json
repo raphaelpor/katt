@@ -41,7 +41,7 @@
     "vite": "8.0.11",
     "vite-plugin-dts": "5.0.0",
     "vitest": "4.1.10",
-    "vscode-jsonrpc": "^8.2.1"
+    "vscode-jsonrpc": "^9.0.0"
   },
   "dependencies": {
     "@github/copilot-sdk": "0.3.0"
